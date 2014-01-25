@@ -2,7 +2,8 @@ package gofs
 
 /**
 * TODO: Figure out this directory stuff. Ideally, a directory would be a 'File'
-* of type 'Directory' that you can read from.
+* of type 'Directory' that you can read from except it'd just be a map from
+* path (string) to inode (File).
 *
 * TODO: Think about what's hapenning. It seems to me that this whole file
 * descriptor thing doesn't make a lot of sense in the context of a HLL with
@@ -20,15 +21,22 @@ package gofs
 * lookup :: (File a) => FileDescriptor -> a
 * read :: FileDescriptor -> ByteString
 * read = readFile . lookup
+*
+* TODO: Nail down the file sharing Unix model. IE, what do operations on the
+* same files from different processes affect? What do operations on the same
+* files from the same proceses affect?
 */
 
-// type File interface {
-//   Open(path string, flags AccessFlag, mode [3]FileMode) FileDescriptor
-//   Close(FileDescriptor) bool
-//   Read(FileDescriptor, numBytes uint) ([]byte, uint)
-//   Write(FileDescriptor, bytes []byte) uint
-//   Seek(FileDescriptor, offset uint, whence Whence) uint
-// }
+// This is what we want to do.
+type File interface {
+  Close() bool
+  Read(numBytes uint) ([]byte, uint)
+  Write(bytes []byte) uint
+  Seek(offset uint, whence Whence) uint
+}
+
+// More of what we want to do.
+type FileTable map[FileDescriptor]*interface{File}
 
 func (p *ProcState) getNewFD() FileDescriptor {
   // Totally a race condition. Need access to docs to check out atomic

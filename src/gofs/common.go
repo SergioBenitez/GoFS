@@ -41,7 +41,7 @@ type Inode struct {
 type FileMode uint
 const (
   M_EXEC FileMode = 1 << iota
-  M_WRITE 
+  M_WRITE
   M_READ
 )
 
