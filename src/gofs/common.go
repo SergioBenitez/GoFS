@@ -1,41 +1,36 @@
 package gofs
 
-import "time"
+import (
+  "io"
+)
 
-type FileDescriptor uint
-type FileIndex uint
+type FileDescriptor int64
 
-type FileDescriptorTable map[FileDescriptor]*DescriptorInfo
-
-type FileInfo struct {
-  inode *Inode
+type File interface {
+  io.Reader // Read(p []byte) (n int, err error)
+  io.Writer // Write(p []byte) (n int, err error)
+  io.Closer // Close() error
+  io.Seeker // Seek(offset int64, whence int) (int64, error)
 }
 
-type DescriptorInfo struct {
-  accessFlags AccessFlag
-  pointer uint
-  fileInfo *FileInfo
-}
+type Directory map[string]interface{}
+
+// This is not like Unix's FileTable that is global. This FileTable is per
+// process. The *File is what's global. Basically, replaces the indexed layer
+// of indirection through the file pointer.
+type FileTable map[FileDescriptor]interface{File}
 
 type ProcState struct {
-  fdTable FileDescriptorTable
+  fileTable FileTable
+  cwd Directory
   lastFd FileDescriptor
 }
 
-type Inode struct {
-  data []byte
-  size uint
-
-  refCount uint // do we need this?
-  fileType uint // something? generics would be great here
-
-  perms uint
-  ownerId uint
-  groupId uint
-
-  lastModTime time.Time
-  lastAccessTime time.Time
-  createTime time.Time
+type GlobalState struct {
+  root Directory
+  stdIn interface{File}
+  stdOut interface{File}
+  stdErr interface{File}
 }
 
 type FileMode uint
@@ -45,9 +40,9 @@ const (
   M_READ
 )
 
-type Whence uint
+type Whence int
 const (
-  SEEK_SET Whence = 1 << iota
+  SEEK_SET = 0
   SEEK_CUR
   SEEK_END
 )
@@ -69,4 +64,3 @@ const (
   O_EVTONLY
   O_CLOEXEC
 )
-
