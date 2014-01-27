@@ -1,8 +1,9 @@
 package gofs
 
 import (
-  "time"
   "fmt"
+  "time"
+  "errors"
 )
 
 /**
@@ -28,7 +29,7 @@ import (
 
 type DataFile struct {
   data []byte
-  size uint
+  seek int64
 
   perms uint
   ownerId uint
@@ -40,27 +41,66 @@ type DataFile struct {
 }
 
 func (file *DataFile) Read(p []byte) (n int, err error) {
-  fmt.Println("Should read.")
-  n, err = 0, nil
-  return
+  if file.seek > int64(len(file.data)) {
+    return 0, errors.New("EOF")
+  }
+
+  fmt.Println("Reading from", file.seek, "to", file.seek + int64(len(p)))
+  fmt.Println("File size is:", len(file.data))
+
+  read := copy(p, file.data[file.seek:])
+  file.seek += int64(read)
+  file.lastAccessTime = time.Now()
+  return read, nil
 }
 
 func (file *DataFile) Write(p []byte) (n int, err error) {
-  fmt.Println("Should write.")
-  n, err = 0, nil
-  return
+  needed := int(file.seek) + len(p)
+  fmt.Println("Needed:", needed, "Have:", cap(file.data))
+
+  if needed - cap(file.data) > 0 {
+    newData := make([]byte, needed, needed * 2)
+    copy(file.data, newData)
+    file.data = newData
+  }
+
+  file.data = file.data[:needed]
+  written := copy(file.data[file.seek:], p)
+
+  file.seek += int64(written)
+  file.lastAccessTime = time.Now()
+  file.lastModTime = time.Now()
+
+  fmt.Println("Wrote:", written, "File size:", len(file.data), "\n")
+  return written, nil
 }
 
 func (file *DataFile) Close() error {
-  fmt.Println("Should close.")
+  // should do more to ensure that the handle isn't reused...
+  // perhaps setting status flags 'opened/closed' is good enough? 
+  file.seek = 0
+  file.lastAccessTime = time.Now()
   return nil
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
-  fmt.Println("Should seek.")
-  return 0, nil
+  switch whence {
+    case SEEK_SET:
+      file.seek = offset;
+    case SEEK_CUR:
+      file.seek += offset;
+    case SEEK_END:
+      file.seek = int64(len(file.data)) + offset;
+  }
+
+  return file.seek, nil
 }
 
 func initDataFile() *DataFile {
-  return &DataFile{}
+  return &DataFile{
+    data: make([]byte, 0, 4096),
+    lastModTime: time.Now(),
+    lastAccessTime: time.Now(),
+    createTime: time.Now(),
+  }
 }

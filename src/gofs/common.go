@@ -42,7 +42,7 @@ const (
 
 type Whence int
 const (
-  SEEK_SET = 0
+  SEEK_SET = iota
   SEEK_CUR
   SEEK_END
 )
