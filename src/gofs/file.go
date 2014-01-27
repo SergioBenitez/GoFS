@@ -55,6 +55,7 @@ func (file *DataFile) Read(p []byte) (n int, err error) {
 }
 
 func (file *DataFile) Write(p []byte) (n int, err error) {
+  // TODO: A really bad idea. Would overflow with seeks > 2^31 - 1, IE, > 2GB
   needed := int(file.seek) + len(p)
   fmt.Println("Needed:", needed, "Have:", cap(file.data))
 
