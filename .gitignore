@@ -1,5 +1,5 @@
 .DS_STORE
-pkg*
+pkg/*
 
 # Compiled Object files, Static and Dynamic libs (Shared Objects)
 *.o
@@ -26,5 +26,4 @@ _testmain.go
 *.test
 
 # compiled binaries
-test
-main
+bin/*
