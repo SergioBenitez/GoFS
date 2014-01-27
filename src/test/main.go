@@ -11,5 +11,8 @@ func main() {
 
   file := proc.GetFile(fd)
   file.Read(make([]byte, 100))
+  file.Write([]byte("Hello, world!"))
+  file.Seek(0, gofs.SEEK_SET)
+  file.Read(make([]byte, 100))
   file.Close()
 }

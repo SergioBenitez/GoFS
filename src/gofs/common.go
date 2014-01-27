@@ -22,8 +22,8 @@ type FileTable map[FileDescriptor]interface{File}
 
 type ProcState struct {
   fileTable FileTable
-  cwd Directory
   lastFd FileDescriptor
+  cwd Directory
 }
 
 type GlobalState struct {
