@@ -57,8 +57,8 @@ type DataFile struct {
 
 func (file *DataFile) checkAccess(acc FileAccess) error {
   switch file.status {
-  case Closed:
-    return errors.New("File is closed.")
+    case Closed:
+      return errors.New("File is closed.")
   }
   return nil
 }
@@ -108,8 +108,6 @@ func (file *DataFile) Open() error {
 }
 
 func (file *DataFile) Close() error {
-  // should do more to ensure that the handle isn't reused...
-  // perhaps setting status flags 'opened/closed' is good enough? 
   file.seek = 0
   file.lastAccessTime = time.Now()
   file.status = Closed

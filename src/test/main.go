@@ -36,15 +36,12 @@ func main() {
   rand1 := randBytes(2500)
   rand2 := randBytes(4800)
 
-  file, err := proc.GetFile(fd)
-  if err != nil { panic(err) }
-
-  file.Write(rand1)
-  file.Write(rand2)
+  proc.Write(fd, rand1)
+  proc.Write(fd, rand2)
 
   buffer := make([]byte, 11)
-  file.Seek(0, gofs.SEEK_SET)
-  n, err := file.Read(buffer)
+  proc.Seek(fd, 0, gofs.SEEK_SET)
+  n, err := proc.Read(fd, buffer)
   if err !=  nil {
     panic(err)
   } else {
@@ -55,8 +52,8 @@ func main() {
   fmt.Println("Got:", buffer, "\n")
 
   buffer = make([]byte, 11)
-  file.Seek(2600, gofs.SEEK_SET)
-  file.Read(buffer)
+  proc.Seek(fd, 2600, gofs.SEEK_SET)
+  proc.Read(fd, buffer)
 
   fmt.Println("Need:", rand2[100:111])
   fmt.Println("Got:", buffer, "\n")
@@ -67,12 +64,9 @@ func main() {
   fd, err = proc.Open("file", gofs.O_RDWR, gofs.UserMode())
   if err != nil { fmt.Println(err) }
 
-  file, err = proc.GetFile(fd)
-  if err != nil { panic(err) }
-
   buffer = make([]byte, 25)
   fmt.Println("Reading...")
-  file.Read(buffer)
+  proc.Read(fd, buffer)
   fmt.Println(buffer)
   proc.Close(fd)
   proc.Unlink("file")
@@ -81,10 +75,7 @@ func main() {
   fd, err = proc.Open("file", gofs.O_RDWR | gofs.O_CREAT, gofs.UserMode())
   if err != nil { fmt.Println(err) }
 
-  file, err = proc.GetFile(fd)
-  if err != nil { panic(err) }
-
   buffer = make([]byte, 25)
-  file.Read(buffer)
+  proc.Read(fd, buffer)
   fmt.Println(buffer)
 }

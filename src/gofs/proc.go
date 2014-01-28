@@ -17,9 +17,7 @@ func UserMode() [3]FileMode {
   return [3]FileMode{M_READ | M_WRITE | M_EXEC, M_READ, M_READ}
 }
 
-/*
- * Sets up the initial file table to point to std out, in, and err.
- */
+// Sets up the initial file table to point to std out, in, and err.
 func (proc *ProcState) initFileTableAndLastFD() {
   table := make(FileTable)
   table[0] = globalState.stdIn
@@ -29,18 +27,21 @@ func (proc *ProcState) initFileTableAndLastFD() {
   proc.lastFd = 2;
 }
 
+// Allocates a new file descriptor atomically.
 func (proc *ProcState) getUnusedFd() FileDescriptor {
   var thing *int64 = (*int64)(&proc.lastFd)
   newthing := atomic.AddInt64(thing, 1)
   return FileDescriptor(newthing)
 }
 
-func (proc *ProcState) GetFile(fd FileDescriptor) (interface{File}, error) {
+// Fetches the file object given a file descriptor
+func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
   file, present := proc.fileTable[fd]
   if present { return file, nil } 
   return nil, errors.New("fd not found")
 }
 
+// Opens a file and returns a file descriptor.
 func (proc *ProcState) Open(path string, flags AccessFlag,
 mode [3]FileMode) (FileDescriptor, error) {
   file, err := proc.OpenX(path, flags, mode)
@@ -51,6 +52,7 @@ mode [3]FileMode) (FileDescriptor, error) {
   return fd, nil
 }
 
+// Opens a file without returning a file descriptor.
 func (proc *ProcState) OpenX(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
   var err error = nil
@@ -88,8 +90,14 @@ mode [3]FileMode) (interface{File}, error) {
  * file table, and 2) a directory.
  */
 
+func (proc *ProcState) Unlink(path string) error {
+  delete(proc.cwd, path)
+  return nil
+}
+
+// Below are FD interfaces to the file calls.
 func (proc *ProcState) Close(fd FileDescriptor) error {
-  file, err := proc.GetFile(fd)
+  file, err := proc.getFile(fd)
   if err != nil {
     return errors.New("fd not found")
   }
@@ -97,9 +105,22 @@ func (proc *ProcState) Close(fd FileDescriptor) error {
   return file.Close()
 }
 
-func (proc *ProcState) Unlink(path string) error {
-  delete(proc.cwd, path)
-  return nil
+func (proc *ProcState) Read(fd FileDescriptor, p []byte) (n int, err error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Read(p)
+}
+
+func (proc *ProcState) Write(fd FileDescriptor, p []byte) (n int, err error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Write(p)
+}
+
+func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64, error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Seek(offset, whence)
 }
 
 func InitProc() *ProcState {

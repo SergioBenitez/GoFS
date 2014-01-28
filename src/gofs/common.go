@@ -40,7 +40,6 @@ const (
   M_READ
 )
 
-type Whence int
 const (
   SEEK_SET = iota
   SEEK_CUR
