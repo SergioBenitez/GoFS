@@ -80,7 +80,7 @@ func (file *DataFile) Read(p []byte) (int, error) {
 }
 
 func (file *DataFile) Write(p []byte) (n int, err error) {
-  if err := file.checkAccess(Read); err != nil { return 0, err }
+  if err := file.checkAccess(Write); err != nil { return 0, err }
 
   needed := file.seek + int64(len(p))
   fmt.Println("Needed:", needed, "Have:", cap(file.data))
@@ -117,7 +117,7 @@ func (file *DataFile) Close() error {
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
-  if err := file.checkAccess(Read); err != nil { return 0, err }
+  if err := file.checkAccess(Seek); err != nil { return 0, err }
 
   switch whence {
     case SEEK_SET:
