@@ -7,9 +7,9 @@ import (
 type FileDescriptor int64
 
 type File interface {
+  io.Closer // Close() error
   io.Reader // Read(p []byte) (n int, err error)
   io.Writer // Write(p []byte) (n int, err error)
-  io.Closer // Close() error
   io.Seeker // Seek(offset int64, whence int) (int64, error)
 }
 

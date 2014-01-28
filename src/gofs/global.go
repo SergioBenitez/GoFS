@@ -17,7 +17,6 @@ func (dir Directory) parent() Directory {
   return dir[".."].(Directory)
 }
 
-
 func initGlobalState() {
   if globalState == nil {
     globalState = new(GlobalState)

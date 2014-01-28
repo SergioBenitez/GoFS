@@ -35,13 +35,15 @@ func (proc *ProcState) getUnusedFd() FileDescriptor {
   return FileDescriptor(newthing)
 }
 
-func (proc *ProcState) GetFile(fd FileDescriptor) interface{File} {
-  return proc.fileTable[fd]
+func (proc *ProcState) GetFile(fd FileDescriptor) (interface{File}, error) {
+  file, present := proc.fileTable[fd]
+  if present { return file, nil } 
+  return nil, errors.New("fd not found")
 }
 
-func (proc *ProcState) Open(name string, flags AccessFlag,
+func (proc *ProcState) Open(path string, flags AccessFlag,
 mode [3]FileMode) (FileDescriptor, error) {
-  file, err := proc.OpenX(name, flags, mode)
+  file, err := proc.OpenX(path, flags, mode)
   if err != nil { return FileDescriptor(-1), err }
 
   fd := proc.getUnusedFd()
@@ -49,18 +51,19 @@ mode [3]FileMode) (FileDescriptor, error) {
   return fd, nil
 }
 
-func (proc *ProcState) OpenX(name string, flags AccessFlag,
+func (proc *ProcState) OpenX(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
   var err error = nil
-  file, present := proc.cwd[name]
+  file, present := proc.cwd[path]
 
-  if invalidPath(name) {
+  if invalidPath(path) {
     return nil, errors.New("Invalid path.")
   }
 
   if present {
     switch file.(type) {
     case *DataFile:
+      file.(*DataFile).Open()
     default:
       err = errors.New("Cannot open file of this type.")
     }
@@ -68,13 +71,35 @@ mode [3]FileMode) (interface{File}, error) {
     switch {
       case (flags & O_CREAT) != 0:
         file = initDataFile()
-        proc.cwd[name] = file
+        proc.cwd[path] = file
+        file.(*DataFile).Open()
       default:
         err = errors.New("File not found.")
     }
   }
 
   return file.(interface{File}), err
+}
+
+/**
+ * Resource freeing happens below. The memory of a file is freed after it is
+ * both closed by all processes and unlinked from all directories. This is
+ * because a file can only be referenced from two different locations: 1) a
+ * file table, and 2) a directory.
+ */
+
+func (proc *ProcState) Close(fd FileDescriptor) error {
+  file, err := proc.GetFile(fd)
+  if err != nil {
+    return errors.New("fd not found")
+  }
+  delete(proc.fileTable, fd)
+  return file.Close()
+}
+
+func (proc *ProcState) Unlink(path string) error {
+  delete(proc.cwd, path)
+  return nil
 }
 
 func InitProc() *ProcState {

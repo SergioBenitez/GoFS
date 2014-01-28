@@ -27,6 +27,19 @@ import (
 * descriptor, two processes can modify the same entry in the file table.
 */
 
+type FileStatus uint
+const (
+  Closed FileStatus = iota
+  Open
+)
+
+type FileAccess uint
+const (
+  Read FileAccess = iota
+  Write
+  Seek
+)
+
 type DataFile struct {
   data []byte
   seek int64
@@ -38,9 +51,21 @@ type DataFile struct {
   lastModTime time.Time
   lastAccessTime time.Time
   createTime time.Time
+
+  status FileStatus
 }
 
-func (file *DataFile) Read(p []byte) (n int, err error) {
+func (file *DataFile) checkAccess(acc FileAccess) error {
+  switch file.status {
+  case Closed:
+    return errors.New("File is closed.")
+  }
+  return nil
+}
+
+func (file *DataFile) Read(p []byte) (int, error) {
+  if err := file.checkAccess(Read); err != nil { return 0, err }
+
   if file.seek > int64(len(file.data)) {
     return 0, errors.New("EOF")
   }
@@ -55,12 +80,14 @@ func (file *DataFile) Read(p []byte) (n int, err error) {
 }
 
 func (file *DataFile) Write(p []byte) (n int, err error) {
+  if err := file.checkAccess(Read); err != nil { return 0, err }
+
   needed := file.seek + int64(len(p))
   fmt.Println("Needed:", needed, "Have:", cap(file.data))
 
   if needed - int64(cap(file.data)) > 0 {
     newData := make([]byte, needed, needed * 2)
-    copy(file.data, newData)
+    copy(newData, file.data)
     file.data = newData
   }
 
@@ -75,15 +102,23 @@ func (file *DataFile) Write(p []byte) (n int, err error) {
   return written, nil
 }
 
+func (file *DataFile) Open() error {
+  file.status = Open
+  return nil
+}
+
 func (file *DataFile) Close() error {
   // should do more to ensure that the handle isn't reused...
   // perhaps setting status flags 'opened/closed' is good enough? 
   file.seek = 0
   file.lastAccessTime = time.Now()
+  file.status = Closed
   return nil
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
+  if err := file.checkAccess(Read); err != nil { return 0, err }
+
   switch whence {
     case SEEK_SET:
       file.seek = offset;
