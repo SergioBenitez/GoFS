@@ -41,19 +41,8 @@ func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
   return nil, errors.New("fd not found")
 }
 
-// Opens a file and returns a file descriptor.
-func (proc *ProcState) Open(path string, flags AccessFlag,
-mode [3]FileMode) (FileDescriptor, error) {
-  file, err := proc.OpenX(path, flags, mode)
-  if err != nil { return FileDescriptor(-1), err }
-
-  fd := proc.getUnusedFd()
-  proc.fileTable[fd] = file
-  return fd, nil
-}
-
 // Opens a file without returning a file descriptor.
-func (proc *ProcState) OpenX(path string, flags AccessFlag,
+func (proc *ProcState) openFile(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
   var err error = nil
   file, present := proc.cwd[path]
@@ -83,6 +72,35 @@ mode [3]FileMode) (interface{File}, error) {
   return file.(interface{File}), err
 }
 
+// Opens a file and returns a file descriptor.
+func (proc *ProcState) Open(path string, flags AccessFlag,
+mode [3]FileMode) (FileDescriptor, error) {
+  file, err := proc.openFile(path, flags, mode)
+  if err != nil { return FileDescriptor(-1), err }
+
+  fd := proc.getUnusedFd()
+  proc.fileTable[fd] = file
+  return fd, nil
+}
+
+func (proc *ProcState) Read(fd FileDescriptor, p []byte) (n int, err error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Read(p)
+}
+
+func (proc *ProcState) Write(fd FileDescriptor, p []byte) (n int, err error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Write(p)
+}
+
+func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64, error) {
+  file, err := proc.getFile(fd)
+  if err != nil { return 0, err }
+  return file.Seek(offset, whence)
+}
+
 /**
  * Resource freeing happens below. The memory of a file is freed after it is
  * both closed by all processes and unlinked from all directories. This is
@@ -105,26 +123,11 @@ func (proc *ProcState) Close(fd FileDescriptor) error {
   return file.Close()
 }
 
-func (proc *ProcState) Read(fd FileDescriptor, p []byte) (n int, err error) {
-  file, err := proc.getFile(fd)
-  if err != nil { return 0, err }
-  return file.Read(p)
-}
-
-func (proc *ProcState) Write(fd FileDescriptor, p []byte) (n int, err error) {
-  file, err := proc.getFile(fd)
-  if err != nil { return 0, err }
-  return file.Write(p)
-}
-
-func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64, error) {
-  file, err := proc.getFile(fd)
-  if err != nil { return 0, err }
-  return file.Seek(offset, whence)
+func init() {
+  initGlobalState()
 }
 
 func InitProc() *ProcState {
-  initGlobalState()
   state := new(ProcState)
   state.cwd = globalState.root
   state.initFileTableAndLastFD()
