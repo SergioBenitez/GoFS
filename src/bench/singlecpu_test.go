@@ -5,7 +5,7 @@ import (
   "testing"
 )
 
-const NUM = 10
+const NUM = 100
 
 func ceilDiv(x int, y int) int {
   return (x + y - 1) / y
@@ -77,6 +77,26 @@ func BenchmarkOC(b *testing.B) {
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Close(fd)
     })
+  }
+}
+
+func BenchmarkOCInLn(b *testing.B) {
+  for j := 0; j < b.N; j++ {
+    b.StopTimer()
+    p := gofs.InitProc()
+    fds := make([]gofs.FileDescriptor, NUM)
+    mode := gofs.UserMode()
+    filename := make([]byte, ceilDiv(NUM, 26))
+    for i := range filename { filename[i] = 'a' }
+    b.StartTimer()
+
+    for i := range fds {
+      var err error
+      fds[i], err = p.Open(string(filename), gofs.O_CREAT, mode)
+      if err != nil { b.Fatal("bad open") }
+      p.Close(fds[i])
+      filename[i / 26] += 1
+    }
   }
 }
 
