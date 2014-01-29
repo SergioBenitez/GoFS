@@ -1,7 +1,7 @@
 package gofs
 
 import (
-  "fmt"
+  // "fmt"
   "time"
   "errors"
 )
@@ -70,8 +70,8 @@ func (file *DataFile) Read(p []byte) (int, error) {
     return 0, errors.New("EOF")
   }
 
-  fmt.Println("Reading from", file.seek, "to", file.seek + int64(len(p)))
-  fmt.Println("File size is:", len(file.data))
+  // fmt.Println("Reading from", file.seek, "to", file.seek + int64(len(p)))
+  // fmt.Println("File size is:", len(file.data))
 
   read := copy(p, file.data[file.seek:])
   file.seek += int64(read)
@@ -83,7 +83,7 @@ func (file *DataFile) Write(p []byte) (n int, err error) {
   if err := file.checkAccess(Write); err != nil { return 0, err }
 
   needed := file.seek + int64(len(p))
-  fmt.Println("Needed:", needed, "Have:", cap(file.data))
+  // fmt.Println("Needed:", needed, "Have:", cap(file.data))
 
   if needed - int64(cap(file.data)) > 0 {
     newData := make([]byte, needed, needed * 2)
@@ -98,7 +98,7 @@ func (file *DataFile) Write(p []byte) (n int, err error) {
   file.lastAccessTime = time.Now()
   file.lastModTime = time.Now()
 
-  fmt.Println("Wrote:", written, "File size:", len(file.data), "\n")
+  // fmt.Println("Wrote:", written, "File size:", len(file.data), "\n")
   return written, nil
 }
 
