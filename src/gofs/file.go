@@ -2,6 +2,7 @@ package gofs
 
 import (
   // "fmt"
+  "gofs/dstore"
   "time"
   "errors"
 )
@@ -41,7 +42,7 @@ const (
 )
 
 type DataFile struct {
-  data []byte
+  data interface{dstore.DataStore}
   seek int64
 
   perms uint
@@ -66,40 +67,25 @@ func (file *DataFile) checkAccess(acc FileAccess) error {
 func (file *DataFile) Read(p []byte) (int, error) {
   if err := file.checkAccess(Read); err != nil { return 0, err }
 
-  if file.seek > int64(len(file.data)) {
+  if file.seek > file.data.Size() {
     return 0, errors.New("EOF")
   }
 
-  // fmt.Println("Reading from", file.seek, "to", file.seek + int64(len(p)))
-  // fmt.Println("File size is:", len(file.data))
-
-  read := copy(p, file.data[file.seek:])
-  file.seek += int64(read)
+  read, err := file.data.Read(file.seek, p)
   file.lastAccessTime = time.Now()
-  return read, nil
+  file.seek += int64(read)
+  return read, err
 }
 
-func (file *DataFile) Write(p []byte) (n int, err error) {
+func (file *DataFile) Write(p []byte) (int, error) {
   if err := file.checkAccess(Write); err != nil { return 0, err }
-
-  needed := file.seek + int64(len(p))
-  // fmt.Println("Needed:", needed, "Have:", cap(file.data))
-
-  if needed - int64(cap(file.data)) > 0 {
-    newData := make([]byte, needed, needed * 2)
-    copy(newData, file.data)
-    file.data = newData
-  }
-
-  file.data = file.data[:needed]
-  written := copy(file.data[file.seek:], p)
-
-  file.seek += int64(written)
+  
+  wrote, err := file.data.Write(file.seek, p)
   file.lastAccessTime = time.Now()
   file.lastModTime = time.Now()
+  file.seek += int64(wrote)
 
-  // fmt.Println("Wrote:", written, "File size:", len(file.data), "\n")
-  return written, nil
+  return wrote, err
 }
 
 func (file *DataFile) Open() error {
@@ -123,7 +109,7 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
     case SEEK_CUR:
       file.seek += offset;
     case SEEK_END:
-      file.seek = int64(len(file.data)) + offset;
+      file.seek = file.data.Size() + offset;
   }
 
   return file.seek, nil
@@ -131,7 +117,7 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
 
 func initDataFile() *DataFile {
   return &DataFile{
-    data: make([]byte, 0, 4096),
+    data: dstore.InitArrayStore(4096),
     lastModTime: time.Now(),
     lastAccessTime: time.Now(),
     createTime: time.Now(),

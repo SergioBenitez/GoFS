@@ -104,8 +104,6 @@ func (proc *ProcState) Link(src string, dst string) error {
   return nil
 }
 
-
-
 // Opens a file and returns a file descriptor.
 func (proc *ProcState) Open(path string, flags AccessFlag,
 mode [3]FileMode) (FileDescriptor, error) {
