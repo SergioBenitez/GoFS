@@ -1,27 +1,30 @@
 package gofs
 
 import (
-  // "fmt"
   "gofs/dstore"
   "time"
   "errors"
 )
 
 /**
-* Ideally, a directory would be a 'File' of type 'Directory' that you can read
-* from except it'd just be a map from path (string) to inode (File).
+* Here's the philosophical QOTD: Is a directory /really/ a file?
 *
-* Open("...") would grab a File and put a pointer to it in a table and return
-* the index (or whatever) of that table. The rest of the file system functions
-* would simply look up the File and call methods on it.
+* My response: No.
 *
-* class File ...
-* instance RegularFile : File ... // not the right syntax
-* readFile :: (File a) => a -> ByteString
-* lookup :: (File a) => FileDescriptor -> a
-* read :: FileDescriptor -> ByteString
-* read = readFile . lookup
+* Unlike files, directories can't be read read, written, or seeked to in any
+* meaninful way, at least not as they're implemented today. Further, directories
+* aren't 'opened' or 'closed' like files are; no, they simply exist as part of
+* the structure of the file system itself. Directories are 'made' and 'changed
+* into', two operations that don't exist for files. Indeed, file and directory
+* interface are highly orthogonal: directories are as much files as file
+* systems are files: they aren't! So, let's not treat them like files.
 *
+* So, are devices files? Sometimes. I posit that if the device can be opened,
+* closed, read, written, and have only a minimal additional interface, then we
+* can call them files. Thankfully, most devices fit into this umbrella: shared
+* memory, networking devices, including sockets, the console, and more. 
+*
+* Older notes:
 * Every Open() call creates a new entry in the file table. That is, besides the
 * underlying file contents, two different open calls for the same file share
 * nothing (file pointer, permissions, etc). However, by sharing the file
@@ -89,6 +92,8 @@ func (file *DataFile) Write(p []byte) (int, error) {
 }
 
 func (file *DataFile) Open() error {
+  file.seek = 0
+  file.lastAccessTime = time.Now()
   file.status = Open
   return nil
 }
