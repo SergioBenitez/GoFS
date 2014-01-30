@@ -42,16 +42,13 @@ func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
 }
 
 // Opens a file without returning a file descriptor.
+// What happens if the filename in path is empty? IE: path = a/b/c/
 func (proc *ProcState) openFile(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
-  var err error = nil
-  file, present := proc.cwd[path]
+  var err error
+  dir, file, _ := proc.resolveFilePath(path)
 
-  if invalidPath(path) {
-    return nil, errors.New("Invalid path.")
-  }
-
-  if present {
+  if file != nil {
     switch file.(type) {
     case *DataFile:
       file.(*DataFile).Open()
@@ -62,7 +59,7 @@ mode [3]FileMode) (interface{File}, error) {
     switch {
       case (flags & O_CREAT) != 0:
         file = initDataFile()
-        proc.cwd[path] = file
+        dir[path] = file
         file.(*DataFile).Open()
       default:
         err = errors.New("File not found.")
@@ -71,6 +68,40 @@ mode [3]FileMode) (interface{File}, error) {
 
   return file.(interface{File}), err
 }
+
+func (proc *ProcState) Mkdir(path string) error {
+  parentDir, dirName, err := proc.resolveDirPath(path)
+  if (err != nil) { return err }
+
+  parentDir[dirName] = initDirectory(parentDir)
+  return nil
+}
+
+func (proc *ProcState) Chdir(path string) error {
+  dir, _, err := proc.resolveDirPath(path)
+  if err != nil { return err }
+
+  proc.cwd = dir
+  return nil
+}
+
+func (proc *ProcState) Link(src string, dst string) error {
+  var err error
+
+  _, file, err := proc.resolveFilePath(src)
+  if err != nil { return err }
+
+  dstDir, baseName, err := proc.resolveDirPath(dst)
+  if err != nil { return err }
+
+  _, exists := dstDir[baseName]
+  if exists { return errors.New("Destination file already exists.") }
+
+  dstDir[baseName] = file
+  return nil
+}
+
+
 
 // Opens a file and returns a file descriptor.
 func (proc *ProcState) Open(path string, flags AccessFlag,

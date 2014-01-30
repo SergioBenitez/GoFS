@@ -97,6 +97,21 @@ func (p *ProcState) safeUnlink(t *testing.T, s string) {
   AssertNoErr(t, err)
 }
 
+func (p *ProcState) safeChdir(t *testing.T, s string) {
+  err := p.Chdir(s)
+  AssertNoErr(t, err)
+}
+
+func (p *ProcState) safeMkdir(t *testing.T, s string) {
+  err := p.Mkdir(s)
+  AssertNoErr(t, err)
+}
+
+func (p *ProcState) safeLink(t *testing.T, s string, s2 string) {
+  err := p.Link(s, s2)
+  AssertNoErr(t, err)
+}
+
 func TestEmptyRead(t *testing.T) {
   p := InitProc()
   filename := "file"
@@ -162,4 +177,48 @@ func TestSeek(t *testing.T) {
 
   p.safeClose(t, fd)
   p.safeUnlink(t, filename)
+}
+
+func TestMkDirAndLink(t *testing.T) {
+  p := InitProc()
+  filename := "file"
+  size := 24
+
+  buffer := make([]byte, size)
+  content1 := randBytes(size)
+  content2 := randBytes(size)
+
+  // Writing file to root
+  fd := p.safeOpen(t, filename, O_RDWR | O_CREAT, UserMode())
+  p.safeWrite(t, fd, content1)
+  p.safeSeek(t, fd, 0, SEEK_SET)
+  p.safeRead(t, fd, buffer)
+  AssertEqualBytes(t, buffer[:len(content1)], content1)
+  p.safeClose(t, fd)
+
+  // Now switching directory and writing 'file' again with content2
+  p.safeMkdir(t, "mydir")
+  p.safeChdir(t, "mydir/")
+
+  fd = p.safeOpen(t, filename, O_RDWR | O_CREAT, UserMode())
+  p.safeWrite(t, fd, content2)
+  p.safeSeek(t, fd, 0, SEEK_SET)
+  p.safeRead(t, fd, buffer)
+  AssertEqualBytes(t, buffer[:len(content2)], content2)
+  p.safeClose(t, fd)
+
+  // Verifying first file wasn't changed
+  p.safeChdir(t, "/")
+  fd = p.safeOpen(t, filename, O_RDONLY, UserMode())
+  p.safeRead(t, fd, buffer)
+  AssertEqualBytes(t, buffer[:len(content1)], content1)
+  p.safeClose(t, fd)
+
+  // linking /mydir/file2 to /file and checking contents
+  buffer = make([]byte, size)
+  p.safeLink(t, filename, "/mydir/file2")
+  fd = p.safeOpen(t, "/mydir/file2", O_RDONLY, UserMode())
+  p.safeRead(t, fd, buffer)
+  AssertEqualBytes(t, buffer[:len(content1)], content1)
+  p.safeClose(t, fd)
 }
