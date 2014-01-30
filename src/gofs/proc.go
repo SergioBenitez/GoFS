@@ -73,6 +73,9 @@ func (proc *ProcState) Mkdir(path string) error {
   parentDir, dirName, err := proc.resolveDirPath(path)
   if (err != nil) { return err }
 
+  _, exists := parentDir[dirName]
+  if exists { return errors.New("Destination already exists.") }
+
   parentDir[dirName] = initDirectory(parentDir)
   return nil
 }
