@@ -104,6 +104,14 @@ func (proc *ProcState) Link(src string, dst string) error {
   return nil
 }
 
+func (proc *ProcState) Rename(src string, dst string) error {
+  err := proc.Link(src, dst)
+  if err != nil { return err }
+
+  err = proc.Unlink(src)
+  return err
+}
+
 // Opens a file and returns a file descriptor.
 func (proc *ProcState) Open(path string, flags AccessFlag,
 mode [3]FileMode) (FileDescriptor, error) {
@@ -141,7 +149,10 @@ func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64,
  */
 
 func (proc *ProcState) Unlink(path string) error {
-  delete(proc.cwd, path)
+  dir, name, err := proc.resolveDirPath(path)
+  if err != nil { return err }
+
+  delete(dir, name)
   return nil
 }
 

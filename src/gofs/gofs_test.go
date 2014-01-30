@@ -112,6 +112,11 @@ func (p *ProcState) safeLink(t *testing.T, s string, s2 string) {
   AssertNoErr(t, err)
 }
 
+func (p *ProcState) safeRename(t *testing.T, s string, s2 string) {
+  err := p.Rename(s, s2)
+  AssertNoErr(t, err)
+}
+
 func TestEmptyRead(t *testing.T) {
   p := InitProc()
   filename := "file"
@@ -220,5 +225,28 @@ func TestMkDirAndLink(t *testing.T) {
   fd = p.safeOpen(t, "/mydir/file2", O_RDONLY, UserMode())
   p.safeRead(t, fd, buffer)
   AssertEqualBytes(t, buffer[:len(content1)], content1)
+  p.safeClose(t, fd)
+}
+
+func TestRename(t *testing.T) {
+  p := InitProc()
+  filename := "file"
+  filename2 := "another"
+  size := 24
+  buffer := make([]byte, size)
+  content := randBytes(size)
+
+  // write to the first file
+  fd := p.safeOpen(t, filename, O_RDWR | O_CREAT, UserMode())
+  p.safeWrite(t, fd, content)
+  p.safeClose(t, fd)
+
+  // rename file 1 to file 2
+  p.safeRename(t, filename, filename2)
+
+  // open and read from the second file
+  fd = p.safeOpen(t, filename2, O_RDONLY, UserMode())
+  p.safeRead(t, fd, buffer)
+  AssertEqualBytes(t, buffer[:len(content)], content)
   p.safeClose(t, fd)
 }
