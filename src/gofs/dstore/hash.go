@@ -35,31 +35,29 @@ func (s *HashStore) Read(o int, p []byte) (n int, e error) {
 }
 
 func (s *HashStore) Write(o int, p []byte) (n int, err error) {
-  needed := o + len(p)
+  // determining how many blocks are needed
+  needed := (o + len(p) + s.blockSize - 1) / s.blockSize
 
-  // expanding data array if needed
-  if needed - (cap(s.data) * s.blockSize) > 0 {
+  // expanding blocks data array if needed
+  if needed - cap(s.data) > 0 {
     newData := make([][]byte, needed, needed * 2)
     copy(newData, s.data)
     s.data = newData
   }
 
-  // allocating empty data blocks if needed
+  // allocating empty data blocks if needed, writing to first block
   s.expandTo(((o + len(p)) / s.blockSize) + 1)
-
-  // writing first block
   i, off := o / s.blockSize, o % s.blockSize
   n += copy(s.data[i][off:s.blockSize], p)
 
   // updating headers
   s.data[i] = s.data[i][:n]
 
+  // writing to rest of block and updating headers in process
   for i = i + 1; i < len(s.data) && n < len(p); i++ {
     written := copy(s.data[i][:s.blockSize], p[n:])
-    n += written
-
-    // updating block headers
     s.data[i] = s.data[i][:written]
+    n += written
   }
 
   return 0, nil
