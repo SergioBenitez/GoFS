@@ -2,9 +2,9 @@ package dstore
 
 type DataStore interface {
   // Read/Write beginning at offset o from/to p
-  Read(o int64, p []byte) (int, error)
-  Write(o int64, p []byte) (int, error)
+  Read(o int, p []byte) (int, error)
+  Write(o int, p []byte) (int, error)
 
   // Returns the number of bytes stored
-  Size() int64
+  Size() int
 }

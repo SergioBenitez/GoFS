@@ -46,7 +46,7 @@ const (
 
 type DataFile struct {
   data interface{dstore.DataStore}
-  seek int64
+  seek int
 
   perms uint
   ownerId uint
@@ -69,14 +69,11 @@ func (file *DataFile) checkAccess(acc FileAccess) error {
 
 func (file *DataFile) Read(p []byte) (int, error) {
   if err := file.checkAccess(Read); err != nil { return 0, err }
-
-  if file.seek > file.data.Size() {
-    return 0, errors.New("EOF")
-  }
+  if file.seek >= file.data.Size() { return 0, errors.New("EOF") }
 
   read, err := file.data.Read(file.seek, p)
   file.lastAccessTime = time.Now()
-  file.seek += int64(read)
+  file.seek += read
   return read, err
 }
 
@@ -86,7 +83,7 @@ func (file *DataFile) Write(p []byte) (int, error) {
   wrote, err := file.data.Write(file.seek, p)
   file.lastAccessTime = time.Now()
   file.lastModTime = time.Now()
-  file.seek += int64(wrote)
+  file.seek += wrote
 
   return wrote, err
 }
@@ -110,18 +107,19 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
 
   switch whence {
     case SEEK_SET:
-      file.seek = offset;
+      file.seek = int(offset);
     case SEEK_CUR:
-      file.seek += offset;
+      file.seek += int(offset);
     case SEEK_END:
-      file.seek = file.data.Size() + offset;
+      file.seek = file.data.Size() + int(offset);
   }
 
-  return file.seek, nil
+  return int64(file.seek), nil
 }
 
 func initDataFile() *DataFile {
   return &DataFile{
+    // data: dstore.InitHashStore(4096),
     data: dstore.InitArrayStore(4096),
     lastModTime: time.Now(),
     lastAccessTime: time.Now(),

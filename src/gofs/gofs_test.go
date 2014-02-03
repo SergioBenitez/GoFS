@@ -56,8 +56,8 @@ func AssertTrue(t *testing.T, val bool, msg string) {
 
 func AssertEqualBytes(t *testing.T, b1 []byte, b2 []byte) {
   equal := bytes.Equal(b1, b2)
-  str := fmt.Sprintf("b1[%d] != b2[%d]\nb1: %v\nb2: %v",
-    len(b1), len(b2), b1, b2)
+  str := fmt.Sprintf("b1[%d] != b2[%d]\nb1[:10]: %v...\nb2[:10]: %v...",
+    len(b1), len(b2), b1[:10], b2[:10])
   AssertTrue(t, equal, str)
 }
 
@@ -121,16 +121,15 @@ func TestEmptyRead(t *testing.T) {
   p := InitProc()
   filename := "file"
   buffer := make([]byte, 24)
-  blank := make([]byte, 24)
 
   fd := p.safeOpen(t, filename, O_RDONLY | O_CREAT, UserMode())
 
-  p.safeRead(t, fd, buffer)
-  AssertEqualBytes(t, buffer, blank)
+  _, err := p.Read(fd, buffer)
+  AssertTrue(t, err != nil, "Expected not-nil error.")
 
   p.safeSeek(t, fd, 0, SEEK_SET)
-  p.safeRead(t, fd, buffer)
-  AssertEqualBytes(t, buffer, blank)
+  _, err = p.Read(fd, buffer)
+  AssertTrue(t, err != nil, "Expected not-nil error.")
 
   p.safeClose(t, fd)
   p.safeUnlink(t, filename)
@@ -141,8 +140,6 @@ func TestWriteRead(t *testing.T) {
   filename := "file"
   content := []byte("Hello, world!")
   buffer := make([]byte, 24)
-  buffer2 := make([]byte, 24)
-  blank := make([]byte, 24)
 
   fd := p.safeOpen(t, filename, O_RDWR | O_CREAT, UserMode())
   p.safeWrite(t, fd, content)
@@ -150,14 +147,14 @@ func TestWriteRead(t *testing.T) {
   p.safeRead(t, fd, buffer)
   AssertEqualBytes(t, buffer[:len(content)], content)
 
-  p.safeRead(t, fd, buffer)
-  AssertEqualBytes(t, buffer2, blank)
+  _, err := p.Read(fd, buffer)
+  AssertTrue(t, err != nil, "Expected not-nil error.")
 
   p.safeClose(t, fd)
   p.safeUnlink(t, filename)
 }
 
-func TestSeek(t *testing.T) {
+func TestReadWriteSeek(t *testing.T) {
   p := InitProc()
   filename := "file"
   size := 9240
@@ -171,9 +168,9 @@ func TestSeek(t *testing.T) {
   AssertEqualBytes(t, buffer[:len(content)], content)
 
   // randomly seek 5000 times and verify 250 bytes
-  bytes := 250
+  bytes := 256
   buf := make([]byte, bytes)
-  for i := 0; i < 5000; i += 1 {
+  for i := 0; i < 5000; i++ {
     pos := rand.Int63n(int64(size - bytes))
     p.safeSeek(t, fd, pos, SEEK_SET)
     p.safeRead(t, fd, buf)

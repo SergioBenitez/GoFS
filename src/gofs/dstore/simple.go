@@ -6,16 +6,16 @@ type ArrayStore struct {
   data []byte
 }
 
-func (s *ArrayStore) Read(o int64, p []byte) (int, error) {
-  if o > s.Size() { return 0, errors.New("EOF") }
+func (s *ArrayStore) Read(o int, p []byte) (int, error) {
+  if o >= s.Size() { return 0, errors.New("EOF") }
 
   return copy(p, s.data[o:]), nil
 }
 
-func (s *ArrayStore) Write(o int64, p []byte) (int, error) {
-  needed := o + int64(len(p))
+func (s *ArrayStore) Write(o int, p []byte) (int, error) {
+  needed := o + len(p)
 
-  if needed - int64(cap(s.data)) > 0 {
+  if needed - cap(s.data) > 0 {
     newData := make([]byte, needed, needed * 2)
     copy(newData, s.data)
     s.data = newData
@@ -25,8 +25,8 @@ func (s *ArrayStore) Write(o int64, p []byte) (int, error) {
   return copy(s.data[o:], p), nil
 }
 
-func (s *ArrayStore) Size() int64 {
-  return int64(len(s.data))
+func (s *ArrayStore) Size() int {
+  return len(s.data)
 }
 
 func InitArrayStore(alloc uint64) *ArrayStore {
