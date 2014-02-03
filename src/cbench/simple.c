@@ -33,11 +33,14 @@ open_many(int n) {
 }
 
 void
+close_all(FILE **files, int n) {
+  for (int i = 0; i < n; ++i) fclose(files[i]);
+}
+
+void
 OtC() {
   FILE **files = open_many(NUM);
-  for (int i = 0; i < NUM; ++i) {
-    fclose(files[i]);
-  }
+  close_all(files, NUM);
   free(files);
 }
 
