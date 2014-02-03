@@ -19,9 +19,8 @@ type HashStore struct {
 func (s *HashStore) Read(o int, p []byte) (n int, e error) {
   if o >= s.Size() { return 0, errors.New("EOF") }
 
-  i, off := o / s.blockSize, o % s.blockSize
-
   // copy from first block
+  i, off := o / s.blockSize, o % s.blockSize
   if i < len(s.data) {
     n += copy(p, s.data[i][off:s.blockSize]) 
   }
