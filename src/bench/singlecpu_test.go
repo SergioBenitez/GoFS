@@ -41,15 +41,15 @@ f func(gofs.FileDescriptor, string)) []gofs.FileDescriptor {
   fds := make([]gofs.FileDescriptor, n)
   mode := gofs.UserMode()
   filename := make([]byte, ceilDiv(n, 26))
-  for i := range filename { filename[i] = 'a' }
+  for i := range filename { filename[i] = '@' }
   b.StartTimer()
 
   for i := range fds {
     var err error
+    filename[i / 26] += 1
     fds[i], err = p.Open(string(filename), gofs.O_CREAT, mode)
     if err != nil { b.Fatal("bad open") }
     f(fds[i], string(filename))
-    filename[i / 26] += 1
   }
 
   return fds

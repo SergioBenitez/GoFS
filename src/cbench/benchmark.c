@@ -73,4 +73,3 @@ benchmark(char *name, void f(), double min_time) {
   printf("Done.\n");
   print_results(&b);
 }
-
