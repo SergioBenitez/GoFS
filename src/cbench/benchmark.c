@@ -58,7 +58,7 @@ print_results(Benchmark *b) {
 }
 
 void
-benchmark(char *name, void f(), double min_time) {
+benchmark(char *name, bench_func f, double min_time) {
   printf("Running '%s'...", name);
 
   Benchmark b;

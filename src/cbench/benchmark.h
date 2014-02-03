@@ -15,4 +15,11 @@ typedef struct Benchmark_T {
   int reps;
 } Benchmark;
 
-void benchmark(char *name, void f(), double min_time);
+typedef void (bench_func)();
+
+void benchmark(char *name, bench_func f, double min_time);
+
+// Would be nice to have these methods.
+// void bench_pause(Benchmark *b);
+// void bench_resume(Benchmark *b);
+
