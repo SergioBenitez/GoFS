@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "benchmark.h"
 
 #define UNUSED(x) (void)(x) 
@@ -9,6 +10,20 @@ const int NUM = 100;
 int
 ceil_div(int x, int y) {
   return (x + y - 1) / y;
+}
+
+unsigned char *
+rand_bytes(Benchmark *b, size_t n) {
+  bench_pause(b);
+  srand(time(NULL));
+
+  unsigned char *bytes = (unsigned char *)malloc(n);
+  for (size_t i = 0; i < n; ++i) {
+    bytes[i] = rand() & 0xFF; 
+  }
+
+  bench_resume(b);
+  return bytes;
 }
 
 char *
@@ -134,9 +149,71 @@ OCU(Benchmark *b) {
   free(files);
 }
 
+void
+OWsC(Benchmark *b) {
+  const size_t size = 1024;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    fwrite(content, 1, size, f);
+    return help_close(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWsCU(Benchmark *b) {
+  const size_t size = 1024;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    fwrite(content, 1, size, f);
+    help_close(f, name);
+    return help_unlink(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWbC(Benchmark *b) {
+  const size_t size = 40960;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    fwrite(content, 1, size, f);
+    return help_close(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWbCU(Benchmark *b) {
+  const size_t size = 40960;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    fwrite(content, 1, size, f);
+    help_close(f, name);
+    return help_unlink(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
 int main() {
   benchmark("Open-Close", OtC, 2);
   benchmark("OpenAndClose", OC, 2);
   benchmark("Open-Close-Unlink", OtCtU, 4);
   benchmark("OpenAndCloseAndUnlink", OCU, 4);
+  benchmark("OpenWriteSmallClose", OWsC, 2);
+  benchmark("OpenWriteSmallCloseUnlink", OWsCU, 4);
+  benchmark("OpenWriteBigClose", OWbC, 2);
+  benchmark("OpenWriteBigCloseUnlink", OWbCU, 5);
 }
