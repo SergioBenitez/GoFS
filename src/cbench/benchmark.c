@@ -11,9 +11,9 @@ record_times(double *real, double *user, double *sys) {
   gettimeofday(&t, NULL);
   getrusage(RUSAGE_SELF, &r);
 
-  *real = t.tv_sec + t.tv_usec * 1e-6;
-  *user = r.ru_utime.tv_sec + r.ru_utime.tv_usec * 1e-6;
-  *sys = r.ru_stime.tv_sec + r.ru_stime.tv_usec * 1e-6;
+  if (real) *real = t.tv_sec + t.tv_usec * 1e-6;
+  if (user) *user = r.ru_utime.tv_sec + r.ru_utime.tv_usec * 1e-6;
+  if (sys) *sys = r.ru_stime.tv_sec + r.ru_stime.tv_usec * 1e-6;
 }
 
 void
@@ -43,33 +43,50 @@ agg_timers(Benchmark *b) {
 }
 
 void
+bench_pause(Benchmark *b) {
+  stop_timer(b);
+  agg_timers(b);
+}
+
+void
+bench_resume(Benchmark *b) {
+  start_timer(b);
+}
+
+void
 print_results(Benchmark *b) {
   printf("Reps: %d, Total time: %f\n\n", b->reps, b->real);
 
-  printf("Totals:\n");
-  printf("Real:\t%f\n", b->real);
-  printf("User:\t%f\n", b->user);
-  printf("Sys:\t%f\n\n", b->sys);
+  /* printf("Totals:\n"); */
+  /* printf("Real:\t%fs\n", b->real); */
+  /* printf("User:\t%fs\n", b->user); */
+  /* printf("Sys:\t%fs\n\n", b->sys); */
+
+  double avg_real = b->real / b->reps;
+  double avg_user = b->user / b->reps;
+  double avg_sys = b->sys / b->reps;
 
   printf("Averages:\n");
-  printf("Real:\t%f\n", b->real / b->reps);
-  printf("User:\t%f\n", b->user / b->reps);
-  printf("Sys:\t%f\n", b->sys / b->reps);
+  printf("Real:\t%6.5fs%15.2fns\n", avg_real, avg_real * 1e9);
+  printf("User:\t%6.5fs%15.2fns\n", avg_user, avg_user * 1e9);
+  printf("Sys:\t%6.5fs%15.2fns\n", avg_sys, avg_sys * 1e9);
 }
 
 void
 benchmark(char *name, bench_func f, double min_time) {
+  printf("------------------------------\n");
   printf("Running '%s'...", name);
 
   Benchmark b;
   reset_timer(&b);
   for (double time = 0; time < min_time; time = b.real) {
     start_timer(&b);
-    f();
+    f(&b);
     stop_timer(&b);
     agg_timers(&b);
   }
 
   printf("Done.\n");
   print_results(&b);
+  printf("------------------------------\n\n");
 }
