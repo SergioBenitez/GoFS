@@ -27,16 +27,13 @@ rand_bytes(Benchmark *b, size_t n) {
 }
 
 char *
-init_filename(int n, int end_len, char *end) {
+init_filename(int n, int end_len, int pfx_len, char *pfix, char *end) {
   int len = ceil_div(n, 26);
-  char *filename = (char *)malloc(len + end_len);
+  char *filename = (char *)malloc(pfx_len + len + end_len);
 
-  for (int i = 0; i < end_len; ++i)
-    filename[len + i] = end[i];
-
-  // should used /dev/shm, but no tmpfs on Mac
-  for (int i = 0; i < len; ++i)
-    filename[i] = '@';
+  for (int i = 0; i < pfx_len; ++i) filename[i] = pfix[i];
+  for (int i = 0; i < len; ++i) filename[pfx_len + i] = '@';
+  for (int i = 0; i < end_len; ++i) filename[pfx_len + len + i] = end[i];
   
   return filename;
 }
@@ -50,14 +47,14 @@ open_many_c(Benchmark *b, int n, int (f) (FILE *, char *)) {
   bench_pause(b);
 
   // creating initial filename and fd array
-  char *filename = init_filename(n, 5, ".out");
+  char *filename = init_filename(n, 5, 9, "/dev/shm/", ".out");
   FILE **files = (FILE **)malloc(n * sizeof(FILE*));
   
   // Done with allocations
   bench_resume(b);
 
   for (int i = 0; i < n; ++i) {
-    filename[i / 26] += 1;
+    filename[9 + (i / 26)] += 1;
     files[i] = fopen(filename, "wb");
     if (f) f(files[i], filename);
   }
@@ -76,7 +73,7 @@ unlink_all(Benchmark *b, int n) {
   bench_pause(b);
 
   // creating initial filename and fd array
-  char *filename = init_filename(n, 5, ".out");
+  char *filename = init_filename(n, 5, 9, "/dev/shm/", ".out");
   FILE **files = (FILE **)malloc(n * sizeof(FILE*));
   
   // Done with allocations
@@ -84,7 +81,7 @@ unlink_all(Benchmark *b, int n) {
 
   // unlinking
   for (int i = 0; i < n; ++i) {
-    filename[i / 26] += 1;
+    filename[9 + (i / 26)] += 1;
     remove(filename);
   }
   
@@ -319,12 +316,12 @@ int main() {
   benchmark("OpenAndCloseAndUnlink", OCU, 4);
   benchmark("OpenWriteSmallClose", OWsC, 2);
   benchmark("OpenWriteSmallCloseUnlink", OWsCU, 4);
-  benchmark("OpenWriteBigClose", OWbC, 2);
+  benchmark("OpenWriteBigClose", OWbC, 4);
   benchmark("OpenWriteBigCloseUnlink", OWbCU, 5);
   benchmark("OpenWriteManySmallClose", OWMsC, 3);
   benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, 5);
-  benchmark("OpenWriteManyBigClose", OWMbC, 2);
-  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 5);
-  benchmark("OpenWriteManyBiggerClose", OWMbbC, 3);
-  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 5);
+  benchmark("OpenWriteManyBigClose", OWMbC, 5);
+  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 7);
+  benchmark("OpenWriteManyBiggerClose", OWMbbC, 5);
+  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 7);
 }

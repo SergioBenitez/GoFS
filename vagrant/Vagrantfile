@@ -1,0 +1,40 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # Configuring Virtualbox settings
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "4608"] # 4.5GB
+    v.customize ["modifyvm", :id, "--cpus", "2"]
+  end
+
+  # Configuring the Vagrant box to be the standard Ubuntu 12.04 64-bit LTS.
+  config.vm.box = "precise64"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+
+  # Forwarding guest 80 to host 8080, just in case
+  config.vm.network :forwarded_port, guest: 80, host: 8080
+
+  # Forward X11 over SSH
+  config.ssh.forward_x11 = true
+
+  # Mounting host code directory ".." to guest "/code"
+  config.vm.synced_folder "..", "/code"
+
+  # Setting the timezone to US Eastern (New York time)
+  config.vm.provision :shell, :inline => "echo \"US/Eastern\" | \
+    sudo tee /etc/timezone && dpkg-reconfigure --frontend noninteractive tzdata"
+ 
+  # Update the server
+  config.vm.provision :shell, :inline => "apt-get update --fix-missing"
+  
+  # Enabling Puppet provisioning using manifests/init.pp as the entry point
+  config.vm.provision :puppet do |puppet|
+    puppet.manifests_path = "puppet"
+    puppet.manifest_file  = "init.pp"
+    puppet.module_path = "puppet/modules"
+  end
+end

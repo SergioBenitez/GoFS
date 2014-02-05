@@ -55,3 +55,6 @@ bin/*
 
 # Compiled Python
 *.pyc
+
+# Vagrant state
+.vagrant
