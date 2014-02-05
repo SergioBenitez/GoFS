@@ -131,7 +131,7 @@ package { 'git': ensure => installed, require => Apt::Update['init']}
 file {'/home/godir':
   path    => "/home/godir",
   ensure  => directory,
-  mode    => 0640
+  mode    => 0655
 }
 ->
 notify {
