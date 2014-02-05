@@ -207,6 +207,111 @@ OWbCU(Benchmark *b) {
   free(files);
 }
 
+void
+OWMsC(Benchmark *b) {
+  const size_t size = 1024;
+  const size_t many = 4096;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 0; i < many; ++i) {
+      fwrite(content, 1, size, f);
+    }
+    return help_close(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWMsCU(Benchmark *b) {
+  const size_t size = 1024;
+  const size_t many = 4096;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 0; i < many; ++i) {
+      fwrite(content, 1, size, f);
+    }
+    help_close(f, name);
+    return help_unlink(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWMbC(Benchmark *b) {
+  const size_t size = 1048576;
+  const size_t many = 32;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 0; i < many; ++i) {
+      fwrite(content, 1, size, f);
+    }
+    return help_close(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWMbCU(Benchmark *b) {
+  const size_t size = 1048576;
+  const size_t many = 32;
+  unsigned char *content = rand_bytes(b, size);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 0; i < many; ++i) {
+      fwrite(content, 1, size, f);
+    }
+    help_close(f, name);
+    return help_unlink(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWMbbC(Benchmark *b) {
+  const size_t start_size = 2;
+  const size_t many = 4096;
+  unsigned char *content = rand_bytes(b, start_size * many);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 1; i <= many; ++i) {
+      fwrite(content, 1, i * start_size, f);
+    }
+    return help_close(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
+void
+OWMbbCU(Benchmark *b) {
+  const size_t start_size = 2;
+  const size_t many = 4096;
+  unsigned char *content = rand_bytes(b, start_size * many);
+
+  int do_it(FILE *f, char *name) {
+    for (size_t i = 1; i <= many; ++i) {
+      fwrite(content, 1, i * start_size, f);
+    }
+    help_close(f, name);
+    return help_unlink(f, name);
+  }
+
+  FILE **files = open_many_c(b, NUM, do_it);
+  free(files);
+}
+
 int main() {
   benchmark("Open-Close", OtC, 2);
   benchmark("OpenAndClose", OC, 2);
@@ -216,4 +321,10 @@ int main() {
   benchmark("OpenWriteSmallCloseUnlink", OWsCU, 4);
   benchmark("OpenWriteBigClose", OWbC, 2);
   benchmark("OpenWriteBigCloseUnlink", OWbCU, 5);
+  benchmark("OpenWriteManySmallClose", OWMsC, 3);
+  benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, 5);
+  benchmark("OpenWriteManyBigClose", OWMbC, 2);
+  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 5);
+  benchmark("OpenWriteManyBiggerClose", OWMbbC, 3);
+  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 5);
 }

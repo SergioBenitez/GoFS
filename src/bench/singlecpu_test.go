@@ -192,3 +192,112 @@ func BenchmarkOWbCU(b *testing.B) {
     })
   }
 }
+
+func BenchmarkOWMsC(b *testing.B) {
+  size := 1024
+  many := 4096
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, size)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
+      for i := 0; i < many; i++ {
+        p.Write(fd, content)
+      }
+      p.Close(fd)
+    })
+  }
+}
+
+func BenchmarkOWMsCU(b *testing.B) {
+  size := 1024
+  many := 4096
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, size)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
+      for i := 0; i < many; i++ {
+        p.Write(fd, content)
+      }
+      p.Close(fd)
+      p.Unlink(s)
+    })
+  }
+}
+
+// the following tests need
+// size * many * NUM bytes
+// for NUM = 100, size = 1MB, many = 32, this is 3.125GB
+
+func BenchmarkOWMbC(b *testing.B) {
+  size := 1048576
+  many := 32
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, size)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
+      for i := 0; i < many; i++ {
+        p.Write(fd, content)
+      }
+      p.Close(fd)
+    })
+  }
+}
+
+func BenchmarkOWMbCU(b *testing.B) {
+  size := 1048576
+  many := 32
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, size)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
+      for i := 0; i < many; i++ {
+        p.Write(fd, content)
+      }
+      p.Close(fd)
+      p.Unlink(s)
+    })
+  }
+}
+
+// the following two tests need
+// NUM * startSize * many * (many - 1) / 2 bytes
+// of memory.
+//
+// for NUM = 100, startSize = 2, many = 4096, this is ~1.56GB
+
+func BenchmarkOWMbbC(b *testing.B) {
+  startSize := 2
+  many := 4096
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, startSize * many)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
+      for i := 1; i <= many; i++ {
+        p.Write(fd, content[:startSize * i])
+      }
+      p.Close(fd)
+    })
+  }
+}
+
+func BenchmarkOWMbbCU(b *testing.B) {
+  startSize := 2
+  many := 4096
+
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    content := randBytes(b, startSize * many)
+    openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
+      for i := 1; i <= many; i++ {
+        p.Write(fd, content[:startSize * i])
+      }
+      p.Close(fd)
+      p.Unlink(s)
+    })
+  }
+}
