@@ -1,4 +1,4 @@
-GOPATH=/code/
+export GOPATH=/code/
 
 gores=`tempfile`
 echo "Running Go benchmarks...(output at $gores)"
