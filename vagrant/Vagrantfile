@@ -7,7 +7,7 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Configuring Virtualbox settings
   config.vm.provider "virtualbox" do |v|
-    v.customize ["modifyvm", :id, "--memory", "4608"] # 4.5GB
+    v.customize ["modifyvm", :id, "--memory", "8192"] # 6GB
     v.customize ["modifyvm", :id, "--cpus", "2"]
   end
 

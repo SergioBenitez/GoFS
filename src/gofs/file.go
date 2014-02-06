@@ -79,7 +79,7 @@ func (file *DataFile) Read(p []byte) (int, error) {
 
 func (file *DataFile) Write(p []byte) (int, error) {
   if err := file.checkAccess(Write); err != nil { return 0, err }
-  
+
   wrote, err := file.data.Write(file.seek, p)
   file.lastAccessTime = time.Now()
   file.lastModTime = time.Now()
