@@ -18,7 +18,8 @@ cleango=`tempfile`
 cat $gores | head -n -1 | tail -n +2 | awk '{ print $3 }' > $cleango
 
 headers=`tempfile`
+cat $gores | head -n -1 | tail -n +2 | awk '{ print $1 }' > $headers
+
 echo -e "Temp files: $cleanc, $cleango, $headers\n"
 echo "Results: (Go | C | ratio)"
-cat $gores | head -n -1 | tail -n +2 | awk '{ print $1 }' > $headers
 paste -d"\t" $headers $cleango $cleanc | awk '{ print $1 "\t" $2 "\t" $3 "\t" $2 / $3 }'

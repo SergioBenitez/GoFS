@@ -5,6 +5,7 @@ import (
   "time"
   "math/rand"
   "testing"
+  "runtime"
 )
 
 const NUM = 100
@@ -88,6 +89,7 @@ func BenchmarkOtC(b *testing.B) {
     p := newProc(b)
     fds := openMany(b, p, NUM)
     closeAll(b, p, fds)
+    runtime.GC()
   }
 }
 
@@ -97,6 +99,7 @@ func BenchmarkOC(b *testing.B) {
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -127,6 +130,7 @@ func BenchmarkOtCtU(b *testing.B) {
     closeAll(b, p, fds)
     unlinkAll(b, p, fds)
   }
+  runtime.GC()
 }
 
 func BenchmarkOCU(b *testing.B) {
@@ -136,6 +140,7 @@ func BenchmarkOCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
 
@@ -149,6 +154,7 @@ func BenchmarkOWsC(b *testing.B) {
       p.Write(fd, content)
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -163,6 +169,7 @@ func BenchmarkOWsCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
 
@@ -176,6 +183,7 @@ func BenchmarkOWbC(b *testing.B) {
       p.Write(fd, content)
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -190,6 +198,7 @@ func BenchmarkOWbCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
 
@@ -206,6 +215,7 @@ func BenchmarkOWMsC(b *testing.B) {
       }
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -223,6 +233,7 @@ func BenchmarkOWMsCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
 
@@ -243,6 +254,7 @@ func BenchmarkOWMbC(b *testing.B) {
       }
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -260,6 +272,7 @@ func BenchmarkOWMbCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
 
@@ -282,6 +295,7 @@ func BenchmarkOWMbbC(b *testing.B) {
       }
       p.Close(fd)
     })
+    runtime.GC()
   }
 }
 
@@ -299,5 +313,6 @@ func BenchmarkOWMbbCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
+    runtime.GC()
   }
 }
