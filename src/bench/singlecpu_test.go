@@ -129,8 +129,8 @@ func BenchmarkOtCtU(b *testing.B) {
     fds := openMany(b, p, NUM)
     closeAll(b, p, fds)
     unlinkAll(b, p, fds)
+    runtime.GC()
   }
-  runtime.GC()
 }
 
 func BenchmarkOCU(b *testing.B) {
