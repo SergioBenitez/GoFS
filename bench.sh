@@ -1,4 +1,9 @@
-export GOPATH=/code/
+export GOPATH=`pwd`
+
+if [ `uname` != 'Linux' ]; then
+  echo "Sorry! Please run this on Linux."
+  exit 1
+fi
 
 gores=`tempfile`
 echo "Running Go benchmarks...(output at $gores)"
