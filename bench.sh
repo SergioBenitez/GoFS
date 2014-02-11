@@ -10,7 +10,7 @@ fi
 if [ "$flag" == '-prof' ]; then
   if [ -z "$exp" ] || [ "$exp" == " " ]; then
     echo "Must supply benchmark regular expression."
-    echo "Example: $0 $flag OWsC"
+    echo "Example: $0 $flag OWsC$"
     exit 1
   fi
 
