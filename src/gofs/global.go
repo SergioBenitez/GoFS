@@ -17,7 +17,11 @@ func (dir Directory) parent() Directory {
   return dir[".."].(Directory)
 }
 
-func initGlobalState() {
+func ClearGlobalState() {
+  globalState = nil
+}
+
+func InitGlobalState() {
   if globalState == nil {
     globalState = new(GlobalState)
     globalState.root = initDirectory(nil)

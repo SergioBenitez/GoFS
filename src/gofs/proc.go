@@ -167,7 +167,7 @@ func (proc *ProcState) Close(fd FileDescriptor) error {
 }
 
 func init() {
-  initGlobalState()
+  InitGlobalState()
 }
 
 func InitProc() *ProcState {

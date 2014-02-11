@@ -81,6 +81,10 @@ func newProc(b *testing.B) *gofs.ProcState {
   b.StopTimer()
   defer b.StartTimer()
 
+  gofs.ClearGlobalState()
+  runtime.GC()
+  gofs.InitGlobalState()
+
   return gofs.InitProc()
 }
 
