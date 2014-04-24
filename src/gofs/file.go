@@ -120,7 +120,7 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
 func initDataFile() *DataFile {
   return &DataFile{
     // data: dstore.InitHashStore(4096),
-    data: dstore.InitArrayStore(4096),
+    data: dstore.InitArrayStore(0),
     lastModTime: time.Now(),
     lastAccessTime: time.Now(),
     createTime: time.Now(),

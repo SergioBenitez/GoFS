@@ -27,10 +27,11 @@ rand_bytes(Benchmark *b, size_t n) {
 }
 
 char *
-init_filename(int n, int end_len, int pfx_len, char *pfix, char *end) {
+init_filename(int n, int pfx_len, int end_len, char *pfix, char *end) {
   int len = ceil_div(n, 26);
-  char *filename = (char *)malloc(pfx_len + len + end_len);
+  char *filename = (char *)malloc(pfx_len + len + end_len + 1);
 
+  // We choose '@' as a placeholder since '@' + 1 = 'A'
   for (int i = 0; i < pfx_len; ++i) filename[i] = pfix[i];
   for (int i = 0; i < len; ++i) filename[pfx_len + i] = '@';
   for (int i = 0; i < end_len; ++i) filename[pfx_len + len + i] = end[i];
@@ -47,14 +48,15 @@ open_many_c(Benchmark *b, int n, int (f) (FILE *, char *)) {
   bench_pause(b);
 
   // creating initial filename and fd array
-  char *filename = init_filename(n, 5, 9, "/dev/shm/", ".out");
+  int pfx_len = 9; // length of /dev/shm/ without null char
+  char *filename = init_filename(n, pfx_len, 4, "/dev/shm/", ".out");
   FILE **files = (FILE **)malloc(n * sizeof(FILE*));
   
   // Done with allocations
   bench_resume(b);
 
   for (int i = 0; i < n; ++i) {
-    filename[9 + (i / 26)] += 1;
+    filename[pfx_len + (i / 26)] += 1;
     files[i] = fopen(filename, "wb");
     if (f) f(files[i], filename);
   }
@@ -73,7 +75,7 @@ unlink_all(Benchmark *b, int n) {
   bench_pause(b);
 
   // creating initial filename and fd array
-  char *filename = init_filename(n, 5, 9, "/dev/shm/", ".out");
+  char *filename = init_filename(n, 9, 4, "/dev/shm/", ".out");
   FILE **files = (FILE **)malloc(n * sizeof(FILE*));
   
   // Done with allocations

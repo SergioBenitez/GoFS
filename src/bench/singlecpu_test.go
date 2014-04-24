@@ -1,6 +1,7 @@
 package bench
 
 import (
+  // "fmt"
   "gofs"
   "time"
   "math/rand"
@@ -82,7 +83,7 @@ func newProc(b *testing.B) *gofs.ProcState {
   defer b.StartTimer()
 
   gofs.ClearGlobalState()
-  runtime.GC()
+  // runtime.GC()
   gofs.InitGlobalState()
 
   return gofs.InitProc()
@@ -90,10 +91,13 @@ func newProc(b *testing.B) *gofs.ProcState {
 
 func BenchmarkOtC(b *testing.B) {
   for j := 0; j < b.N; j++ {
+    // fmt.Println("Creating new process...")
     p := newProc(b)
+    // fmt.Println("Opening many...")
     fds := openMany(b, p, NUM)
+    // fmt.Println("Closing many...")
     closeAll(b, p, fds)
-    runtime.GC()
+    // runtime.GC()
   }
 }
 
@@ -103,7 +107,7 @@ func BenchmarkOC(b *testing.B) {
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Close(fd)
     })
-    runtime.GC()
+    // runtime.GC()
   }
 }
 
@@ -133,7 +137,7 @@ func BenchmarkOtCtU(b *testing.B) {
     fds := openMany(b, p, NUM)
     closeAll(b, p, fds)
     unlinkAll(b, p, fds)
-    runtime.GC()
+    // runtime.GC()
   }
 }
 
