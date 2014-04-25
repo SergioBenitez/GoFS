@@ -1,9 +1,9 @@
 package gofs
 
 import (
-  "gofs/dstore"
   "time"
   "errors"
+  "gofs/dstore"
 )
 
 /**
@@ -45,17 +45,8 @@ const (
 )
 
 type DataFile struct {
-  data interface{dstore.DataStore}
+  inode *Inode
   seek int
-
-  perms uint
-  ownerId uint
-  groupId uint
-
-  lastModTime time.Time
-  lastAccessTime time.Time
-  createTime time.Time
-
   status FileStatus
 }
 
@@ -67,12 +58,16 @@ func (file *DataFile) checkAccess(acc FileAccess) error {
   return nil
 }
 
+func (file *DataFile) Size() int {
+  return file.inode.data.Size()
+}
+
 func (file *DataFile) Read(p []byte) (int, error) {
   if err := file.checkAccess(Read); err != nil { return 0, err }
-  if file.seek >= file.data.Size() { return 0, errors.New("EOF") }
+  if file.seek >= file.Size() { return 0, errors.New("EOF") }
 
-  read, err := file.data.Read(file.seek, p)
-  file.lastAccessTime = time.Now()
+  read, err := file.inode.data.Read(file.seek, p)
+  file.inode.lastAccessTime = time.Now()
   file.seek += read
   return read, err
 }
@@ -80,26 +75,32 @@ func (file *DataFile) Read(p []byte) (int, error) {
 func (file *DataFile) Write(p []byte) (int, error) {
   if err := file.checkAccess(Write); err != nil { return 0, err }
 
-  wrote, err := file.data.Write(file.seek, p)
-  file.lastAccessTime = time.Now()
-  file.lastModTime = time.Now()
+  wrote, err := file.inode.data.Write(file.seek, p)
+  file.inode.lastAccessTime = time.Now()
+  file.inode.lastModTime = time.Now()
   file.seek += wrote
 
   return wrote, err
 }
 
+// Open and Close should simply increment and decrement a reference count for
+// when file descriptors are shared between processes so that each can Close()
+// without affecting the other, and so that when all of them Close(), the handle
+// is disgarded.
+
 func (file *DataFile) Open() error {
   file.seek = 0
-  file.lastAccessTime = time.Now()
+  file.inode.lastAccessTime = time.Now()
   file.status = Open
   return nil
 }
 
 func (file *DataFile) Close() error {
-  file.seek = 0
-  file.lastAccessTime = time.Now()
-  file.status = Closed
-  return nil
+  return ArenaReturnDataFile(file)
+  // file.seek = 0
+  // file.inode.lastAccessTime = time.Now()
+  // file.status = Closed
+  // return nil
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
@@ -111,18 +112,25 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
     case SEEK_CUR:
       file.seek += int(offset);
     case SEEK_END:
-      file.seek = file.data.Size() + int(offset);
+      file.seek = file.Size() + int(offset);
   }
 
   return int64(file.seek), nil
 }
 
-func initDataFile() *DataFile {
-  return &DataFile{
-    // data: dstore.InitHashStore(4096),
+func initDataFile(inode *Inode) *DataFile {
+  file, err := ArenaAllocateDataFile(inode)
+  if err != nil { panic("Out of arena memory!") }
+  return file
+  // return &DataFile{
+  //   inode: inode,
+  //   seek: 0,
+  //   status: Open,
+  // }
+}
+
+func initInode() *Inode {
+  return &Inode{
     data: dstore.InitArrayStore(0),
-    lastModTime: time.Now(),
-    lastAccessTime: time.Now(),
-    createTime: time.Now(),
   }
 }

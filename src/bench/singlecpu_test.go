@@ -82,11 +82,23 @@ func newProc(b *testing.B) *gofs.ProcState {
   b.StopTimer()
   defer b.StartTimer()
 
+  // Should we be clearing the global state?
   gofs.ClearGlobalState()
   // runtime.GC()
   gofs.InitGlobalState()
 
   return gofs.InitProc()
+}
+
+func BenchmarkOCSingle(b *testing.B) {
+  for j := 0; j < b.N; j++ {
+    p := newProc(b)
+    for i := 0; i < NUM; i++ {
+      fd, err := p.Open("test", gofs.O_CREAT, gofs.UserMode())
+      if err != nil { b.Fatal("bad open") }
+      p.Close(fd)
+    }
+  }
 }
 
 func BenchmarkOtC(b *testing.B) {
@@ -110,26 +122,6 @@ func BenchmarkOC(b *testing.B) {
     // runtime.GC()
   }
 }
-
-// func BenchmarkOCInLn(b *testing.B) {
-//   for j := 0; j < b.N; j++ {
-//     b.StopTimer()
-//     p := gofs.InitProc()
-//     fds := make([]gofs.FileDescriptor, NUM)
-//     mode := gofs.UserMode()
-//     filename := make([]byte, ceilDiv(NUM, 26))
-//     for i := range filename { filename[i] = 'a' }
-//     b.StartTimer()
-
-//     for i := range fds {
-//       var err error
-//       fds[i], err = p.Open(string(filename), gofs.O_CREAT, mode)
-//       if err != nil { b.Fatal("bad open") }
-//       p.Close(fds[i])
-//       filename[i / 26] += 1
-//     }
-//   }
-// }
 
 func BenchmarkOtCtU(b *testing.B) {
   for j := 0; j < b.N; j++ {

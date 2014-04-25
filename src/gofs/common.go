@@ -2,9 +2,19 @@ package gofs
 
 import (
   "io"
+  "gofs/dstore"
+  "time"
 )
 
+type Directory map[string]interface{}
+
+// This is the per process FileDescriptor Table
 type FileDescriptor int64
+type FileDescriptorTable map[FileDescriptor]interface{File}
+
+// Global structure keeps track of all open files via an array of *File objects.
+// These *File objects contain the necessary file information.
+// type FileTable []interface{File}
 
 type File interface {
   io.Closer // Close() error
@@ -13,21 +23,27 @@ type File interface {
   io.Seeker // Seek(offset int64, whence int) (int64, error)
 }
 
-type Directory map[string]interface{}
+type Inode struct {
+  data interface{dstore.DataStore}
 
-// This is not like Unix's FileTable that is global. This FileTable is per
-// process. The *File is what's global. Basically, replaces the indexed layer
-// of indirection through the file pointer.
-type FileTable map[FileDescriptor]interface{File}
+  perms uint
+  ownerId uint
+  groupId uint
+
+  lastModTime time.Time
+  lastAccessTime time.Time
+  createTime time.Time
+}
 
 type ProcState struct {
-  fileTable FileTable
+  fileDescriptorTable FileDescriptorTable
   lastFd FileDescriptor
   cwd Directory
 }
 
 type GlobalState struct {
   root Directory
+  // fileTable FileTable
   stdIn interface{File}
   stdOut interface{File}
   stdErr interface{File}

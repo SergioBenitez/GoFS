@@ -19,15 +19,14 @@ func splitPath(path string) (dir string, base string) {
   return path[:index], path[index + 1:]
 }
 
-func (proc *ProcState) resolveFilePath(path string) (Directory, interface{File}, error) {
+func (proc *ProcState) resolveFilePath(path string) (Directory, interface{}, error) {
   dir, fileName, err := proc.resolveDirPath(path)
   if err != nil { return dir, nil, err }
 
   file, ok := dir[fileName]
   if !ok { return dir, nil, errors.New("File not found") }
 
-  // TODO: This will cause a run-time error when file is a Directory.
-  return dir, file.(interface{File}), nil
+  return dir, file, nil
 }
 
 // Returns the directory for a given path and the filename in that path.

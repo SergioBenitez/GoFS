@@ -18,12 +18,12 @@ func UserMode() [3]FileMode {
 }
 
 // Sets up the initial file table to point to std out, in, and err.
-func (proc *ProcState) initFileTableAndLastFD() {
-  table := make(FileTable)
+func (proc *ProcState) initFileDescriptorTableAndLastFD() {
+  table := make(FileDescriptorTable)
   table[0] = globalState.stdIn
   table[1] = globalState.stdOut
   table[2] = globalState.stdErr
-  proc.fileTable = table;
+  proc.fileDescriptorTable = table;
   proc.lastFd = 2;
 }
 
@@ -36,7 +36,7 @@ func (proc *ProcState) getUnusedFd() FileDescriptor {
 
 // Fetches the file object given a file descriptor
 func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
-  file, present := proc.fileTable[fd]
+  file, present := proc.fileDescriptorTable[fd]
   if present { return file, nil } 
   return nil, errors.New("fd not found")
 }
@@ -45,27 +45,29 @@ func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
 // What happens if the filename in path is empty? IE: path = a/b/c/
 func (proc *ProcState) openFile(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
-  var err error
+  var err error; var inode *Inode
   dir, file, _ := proc.resolveFilePath(path)
 
+  // Finding our *Inode, if possible.
   if file != nil {
     switch file.(type) {
-    case *DataFile:
-      file.(*DataFile).Open()
+    case *Inode:
+      inode = file.(*Inode)
     default:
-      err = errors.New("Cannot open file of this type.")
+      return nil, errors.New("Cannot open file of this type.")
     }
   } else {
     switch {
       case (flags & O_CREAT) != 0:
-        file = initDataFile()
-        dir[path] = file
-        file.(*DataFile).Open()
+        inode = initInode()
+        dir[path] = inode
       default:
-        err = errors.New("File not found.")
+        return nil, errors.New("File not found.")
     }
   }
 
+  // We're here? We found it! Otherwise, would have err.
+  file = initDataFile(inode)
   return file.(interface{File}), err
 }
 
@@ -119,7 +121,7 @@ mode [3]FileMode) (FileDescriptor, error) {
   if err != nil { return FileDescriptor(-1), err }
 
   fd := proc.getUnusedFd()
-  proc.fileTable[fd] = file
+  proc.fileDescriptorTable[fd] = file
   return fd, nil
 }
 
@@ -142,10 +144,10 @@ func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64,
 }
 
 /**
- * Resource freeing happens below. The memory of a file is freed after it is
- * both closed by all processes and unlinked from all directories. This is
- * because a file can only be referenced from two different locations: 1) a
- * file table, and 2) a directory.
+ * Resource freeing happens below. The memory of an inode is freed after it is
+ * referenced by no open files unlinked from all directories. This is because an
+ * inode can only be referenced from two different locations: 1) a file, and 2)
+ * a directory.
  */
 
 func (proc *ProcState) Unlink(path string) error {
@@ -156,13 +158,13 @@ func (proc *ProcState) Unlink(path string) error {
   return nil
 }
 
-// Below are FD interfaces to the file calls.
 func (proc *ProcState) Close(fd FileDescriptor) error {
   file, err := proc.getFile(fd)
   if err != nil {
     return errors.New("fd not found")
   }
-  delete(proc.fileTable, fd)
+
+  delete(proc.fileDescriptorTable, fd)
   return file.Close()
 }
 
@@ -173,6 +175,6 @@ func init() {
 func InitProc() *ProcState {
   state := new(ProcState)
   state.cwd = globalState.root
-  state.initFileTableAndLastFD()
+  state.initFileDescriptorTableAndLastFD()
   return state
 }
