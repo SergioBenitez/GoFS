@@ -46,10 +46,11 @@ func (proc *ProcState) getFile(fd FileDescriptor) (interface{File}, error) {
 func (proc *ProcState) openFile(path string, flags AccessFlag,
 mode [3]FileMode) (interface{File}, error) {
   var err error; var inode *Inode
-  dir, file, _ := proc.resolveFilePath(path)
+  dir, filename, _ := proc.resolveDirPath(path)
+  file, ok := dir[filename]
 
   // Finding our *Inode, if possible.
-  if file != nil {
+  if ok {
     switch file.(type) {
     case *Inode:
       inode = file.(*Inode)
@@ -60,7 +61,7 @@ mode [3]FileMode) (interface{File}, error) {
     switch {
       case (flags & O_CREAT) != 0:
         inode = initInode()
-        dir[path] = inode
+        dir[filename] = inode
       default:
         return nil, errors.New("File not found.")
     }

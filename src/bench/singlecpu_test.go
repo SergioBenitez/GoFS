@@ -82,6 +82,7 @@ func newProc(b *testing.B) *gofs.ProcState {
   b.StopTimer()
   defer b.StartTimer()
 
+  // fmt.Println("new proc")
   // Should we be clearing the global state?
   gofs.ClearGlobalState()
   // runtime.GC()
@@ -90,9 +91,9 @@ func newProc(b *testing.B) *gofs.ProcState {
   return gofs.InitProc()
 }
 
-func BenchmarkOCSingle(b *testing.B) {
+func BenchmarkOC1(b *testing.B) {
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     for i := 0; i < NUM; i++ {
       fd, err := p.Open("test", gofs.O_CREAT, gofs.UserMode())
       if err != nil { b.Fatal("bad open") }
@@ -102,9 +103,9 @@ func BenchmarkOCSingle(b *testing.B) {
 }
 
 func BenchmarkOtC(b *testing.B) {
+  // fmt.Println("Creating new process...")
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    // fmt.Println("Creating new process...")
-    p := newProc(b)
     // fmt.Println("Opening many...")
     fds := openMany(b, p, NUM)
     // fmt.Println("Closing many...")
@@ -114,8 +115,8 @@ func BenchmarkOtC(b *testing.B) {
 }
 
 func BenchmarkOC(b *testing.B) {
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Close(fd)
     })
@@ -124,8 +125,8 @@ func BenchmarkOC(b *testing.B) {
 }
 
 func BenchmarkOtCtU(b *testing.B) {
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     fds := openMany(b, p, NUM)
     closeAll(b, p, fds)
     unlinkAll(b, p, fds)
@@ -134,13 +135,13 @@ func BenchmarkOtCtU(b *testing.B) {
 }
 
 func BenchmarkOCU(b *testing.B) {
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       p.Close(fd)
       p.Unlink(s)
     })
-    runtime.GC()
+    // runtime.GC()
   }
 }
 

@@ -5,10 +5,12 @@ import (
   "errors"
 )
 
+const USE_ARENA = true
+const ARENA_SIZE = 100
 var fileArena *FileArena
 
 type FileArena struct {
-  files [64]*DataFile
+  files [ARENA_SIZE]*DataFile
   used int
   size int
 }
@@ -30,11 +32,12 @@ func (dir Directory) parent() Directory {
 
 func ClearGlobalState() {
   globalState = nil
+  fileArena = nil
 }
 
 func ArenaAllocateDataFile(inode *Inode) (*DataFile, error) {
   if fileArena.used >= fileArena.size { 
-    panic("Out of memory!")
+    panic("Out of arena memory!")
     return nil, errors.New("Out Of Memory!")
   }
 
@@ -69,15 +72,15 @@ func InitGlobalState() {
 
   // Creating FileArena
   if fileArena == nil {
-    var files [64]*DataFile
-    for i := 0; i < 64; i++ {
+    var files [ARENA_SIZE]*DataFile
+    for i := 0; i < ARENA_SIZE; i++ {
       files[i] = &DataFile{}
     }
 
     fileArena = &FileArena{
       files: files,
       used: 0,
-      size: 64,
+      size: ARENA_SIZE,
     }
   }
 }

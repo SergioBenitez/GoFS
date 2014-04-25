@@ -80,10 +80,9 @@ benchmark(char *name, bench_func f, double min_time) {
   Benchmark b;
   reset_timer(&b);
   for (double time = 0; time < min_time; time = b.real) {
-    start_timer(&b);
+    bench_resume(&b);
     f(&b);
-    stop_timer(&b);
-    agg_timers(&b);
+    bench_pause(&b);
   }
 
   printf("Done.\n");

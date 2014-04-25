@@ -96,11 +96,14 @@ func (file *DataFile) Open() error {
 }
 
 func (file *DataFile) Close() error {
-  return ArenaReturnDataFile(file)
-  // file.seek = 0
-  // file.inode.lastAccessTime = time.Now()
-  // file.status = Closed
-  // return nil
+  if USE_ARENA {
+    return ArenaReturnDataFile(file)
+  }
+
+  file.seek = 0
+  file.inode.lastAccessTime = time.Now()
+  file.status = Closed
+  return nil
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
@@ -119,14 +122,17 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
 }
 
 func initDataFile(inode *Inode) *DataFile {
-  file, err := ArenaAllocateDataFile(inode)
-  if err != nil { panic("Out of arena memory!") }
-  return file
-  // return &DataFile{
-  //   inode: inode,
-  //   seek: 0,
-  //   status: Open,
-  // }
+  if USE_ARENA {
+    file, err := ArenaAllocateDataFile(inode)
+    if err != nil { panic("Out of arena memory!") }
+    return file
+  }
+
+  return &DataFile{
+    inode: inode,
+    seek: 0,
+    status: Open,
+  }
 }
 
 func initInode() *Inode {
