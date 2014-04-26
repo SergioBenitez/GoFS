@@ -94,11 +94,12 @@ func newProc(b *testing.B) *gofs.ProcState {
 func BenchmarkOC1(b *testing.B) {
   p := newProc(b)
   for j := 0; j < b.N; j++ {
-    for i := 0; i < NUM; i++ {
+    for i := 0; i < 17108864; i++ { // string garbage?
       fd, err := p.Open("test", gofs.O_CREAT, gofs.UserMode())
       if err != nil { b.Fatal("bad open") }
       p.Close(fd)
     }
+    // runtime.GC()
   }
 }
 
@@ -224,8 +225,8 @@ func BenchmarkOWMsCU(b *testing.B) {
   size := 1024
   many := 4096
 
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       for i := 0; i < many; i++ {
@@ -234,7 +235,7 @@ func BenchmarkOWMsCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
-    runtime.GC()
+    // runtime.GC()
   }
 }
 
@@ -246,8 +247,8 @@ func BenchmarkOWMbC(b *testing.B) {
   size := 1048576
   many := 32
 
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       for i := 0; i < many; i++ {
@@ -255,7 +256,7 @@ func BenchmarkOWMbC(b *testing.B) {
       }
       p.Close(fd)
     })
-    runtime.GC()
+    // runtime.GC()
   }
 }
 
@@ -263,8 +264,8 @@ func BenchmarkOWMbCU(b *testing.B) {
   size := 1048576
   many := 32
 
+  p := newProc(b)
   for j := 0; j < b.N; j++ {
-    p := newProc(b)
     content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       for i := 0; i < many; i++ {
@@ -273,7 +274,6 @@ func BenchmarkOWMbCU(b *testing.B) {
       p.Close(fd)
       p.Unlink(s)
     })
-    runtime.GC()
   }
 }
 

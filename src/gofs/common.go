@@ -9,7 +9,7 @@ import (
 type Directory map[string]interface{}
 
 // This is the per process FileDescriptor Table
-type FileDescriptor int64
+type FileDescriptor int16
 type FileDescriptorTable map[FileDescriptor]interface{File}
 
 // Global structure keeps track of all open files via an array of *File objects.
@@ -35,8 +35,10 @@ type Inode struct {
   createTime time.Time
 }
 
+const MAX_DESCRIPTORS = 1024;
 type ProcState struct {
   fileDescriptorTable FileDescriptorTable
+  freeDescriptors [MAX_DESCRIPTORS]FileDescriptor
   lastFd FileDescriptor
   cwd Directory
 }

@@ -19,6 +19,9 @@ if [ "$flag" == '-prof' ]; then
   echo "Profiling Go code..."
   go test -bench $exp -cpuprofile $cpu -memprofile $mem bench
   echo -e "CPU Profile: $cpu\nMEM Profile: $mem"
+elif [ "$flag" == '-c' ]; then
+  echo "Running C benchmarks..."
+  gcc -std=gnu99 src/cbench/*.c && ./a.out && rm a.out
 else
   gores=`mktemp -t goresXXXXX`
   echo "Running Go benchmarks...(output at $gores)"

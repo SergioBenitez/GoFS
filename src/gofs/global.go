@@ -72,15 +72,13 @@ func InitGlobalState() {
 
   // Creating FileArena
   if fileArena == nil {
-    var files [ARENA_SIZE]*DataFile
-    for i := 0; i < ARENA_SIZE; i++ {
-      files[i] = &DataFile{}
-    }
-
     fileArena = &FileArena{
-      files: files,
       used: 0,
       size: ARENA_SIZE,
+    }
+
+    for i := 0; i < ARENA_SIZE; i++ {
+      fileArena.files[i] = &DataFile{}
     }
   }
 }

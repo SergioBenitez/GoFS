@@ -1,7 +1,6 @@
 package gofs
 
 import (
-  "sync/atomic"
   "errors"
 )
 
@@ -24,14 +23,29 @@ func (proc *ProcState) initFileDescriptorTableAndLastFD() {
   table[1] = globalState.stdOut
   table[2] = globalState.stdErr
   proc.fileDescriptorTable = table;
-  proc.lastFd = 2;
+
+  // lastFd keeps track of the index of the last used FD
+  proc.lastFd = 0
+  for i := 0; i < MAX_DESCRIPTORS; i++ {
+    proc.freeDescriptors[i] = FileDescriptor(i + 3); // since 0, 1, 2 are taken
+  }
 }
 
-// Allocates a new file descriptor atomically.
-func (proc *ProcState) getUnusedFd() FileDescriptor {
-  var thing *int64 = (*int64)(&proc.lastFd)
-  newthing := atomic.AddInt64(thing, 1)
-  return FileDescriptor(newthing)
+// Allocates a new file descriptor (not) atomically.
+func (proc *ProcState) getUnusedFd() (fd FileDescriptor) {
+  // Below is what we used to do for the atomic stuff
+  // var thing *int64 = (*int64)(&proc.lastFd)
+  // newthing := atomic.AddInt64(thing, 1)
+  if proc.lastFd >= MAX_DESCRIPTORS { panic("Out of FDs!") }
+  fd = proc.freeDescriptors[proc.lastFd]
+  proc.lastFd += 1
+  return
+}
+
+func (proc *ProcState) returnFd(fd FileDescriptor) {
+  if proc.lastFd <= 0 { panic("Overfreeing FDs!") }
+  proc.lastFd -= 1
+  proc.freeDescriptors[proc.lastFd] = fd;
 }
 
 // Fetches the file object given a file descriptor
@@ -161,10 +175,9 @@ func (proc *ProcState) Unlink(path string) error {
 
 func (proc *ProcState) Close(fd FileDescriptor) error {
   file, err := proc.getFile(fd)
-  if err != nil {
-    return errors.New("fd not found")
-  }
+  if err != nil { return errors.New("fd not found") }
 
+  proc.returnFd(fd)
   delete(proc.fileDescriptorTable, fd)
   return file.Close()
 }

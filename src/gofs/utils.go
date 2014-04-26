@@ -37,13 +37,14 @@ func (proc *ProcState) resolveFilePath(path string) (Directory, interface{}, err
 func (proc *ProcState) resolveDirPath(path string) (Directory, string, error) {
   // shouldn't do anything in this case
   if len(path) == 0 { return proc.cwd, "", nil }
+  if strings.Count(path, "/") <= 0 { return proc.cwd, path, nil }
 
   dirPath, fileName := splitPath(path)
   dirs := strings.Split(dirPath, "/")
 
   cwd := proc.cwd
   if path[0] == '/' {
-    cwd = globalState.root 
+    cwd = globalState.root
     dirs = dirs[1:]
   }
 

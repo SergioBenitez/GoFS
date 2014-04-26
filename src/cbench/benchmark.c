@@ -80,6 +80,7 @@ benchmark(char *name, bench_func f, double min_time) {
   Benchmark b;
   reset_timer(&b);
   for (double time = 0; time < min_time; time = b.real) {
+    // use readtimestampcounter
     bench_resume(&b);
     f(&b);
     bench_pause(&b);

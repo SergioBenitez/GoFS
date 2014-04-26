@@ -124,10 +124,8 @@ help_close_unlink(FILE *f, char *name) {
 void
 OCSingle(Benchmark *b) {
   UNUSED(b);
-  for (int i = 0; i < NUM; ++i) {
-    FILE *file = fopen("/dev/shm/test", "wb");
-    fclose(file);
-  }
+  FILE *file = fopen("/dev/shm/test", "wb");
+  fclose(file);
 }
 
 void
