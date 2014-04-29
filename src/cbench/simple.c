@@ -331,7 +331,7 @@ int main() {
   benchmark("OpenWriteManySmallClose", OWMsC, 3);
   benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, 5);
   benchmark("OpenWriteManyBigClose", OWMbC, 5);
-  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 7);
+  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 6);
   benchmark("OpenWriteManyBiggerClose", OWMbbC, 5);
-  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 7);
+  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 6);
 }

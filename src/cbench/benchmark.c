@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <stdbool.h>
+#include <stdint.h>
 #include "benchmark.h"
 
 void
@@ -39,7 +41,6 @@ agg_timers(Benchmark *b) {
   b->real += b->real_end - b->real_start;
   b->user += b->user_end - b->user_start;
   b->sys += b->sys_end - b->sys_start;
-  b->reps++;
 }
 
 void
@@ -72,20 +73,46 @@ print_results(Benchmark *b) {
   printf("Sys:\t%6.5fs%15.2fns\n", avg_sys, avg_sys * 1e9);
 }
 
+/* void */
+/* benchmark(char *name, bench_func f, double min_time) { */
+/*   printf("------------------------------\n"); */
+/*   printf("Running '%s'...", name); */
+
+/*   Benchmark b; */
+/*   reset_timer(&b); */
+/*   for (double time = 0; time < min_time; time = b.real) { */
+/*     // use readtimestampcounter */
+/*     bench_resume(&b); */
+/*     f(&b); */
+/*     bench_pause(&b); */
+/*     b.reps++; */
+/*   } */
+
+/*   printf("Done.\n"); */
+/*   print_results(&b); */
+/*   printf("------------------------------\n\n"); */
+/* } */
+
 void
 benchmark(char *name, bench_func f, double min_time) {
   printf("------------------------------\n");
   printf("Running '%s'...", name);
+  uint64_t reps = 1;
 
   Benchmark b;
-  reset_timer(&b);
-  for (double time = 0; time < min_time; time = b.real) {
-    // use readtimestampcounter
+  while (true) {
+    reset_timer(&b);
     bench_resume(&b);
-    f(&b);
+    for (uint64_t i = 0; i < reps; ++i) { f(&b); }
     bench_pause(&b);
+
+    if (b.real < min_time) {
+      uint64_t new_reps = reps * (min_time / b.real);
+      reps = (new_reps > reps) ? new_reps : reps + 1;
+    } else break;
   }
 
+  b.reps = reps;
   printf("Done.\n");
   print_results(&b);
   printf("------------------------------\n\n");
