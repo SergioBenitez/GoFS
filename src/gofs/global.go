@@ -3,14 +3,19 @@ package gofs
 import (
   "os"
   "errors"
+  "gofs/dstore"
 )
 
-const USE_ARENA = true
-const ARENA_SIZE = 100
+const USE_FILE_ARENA = true
+
+const FILE_ARENA_SIZE = 100
+const PAGE_ARENA_SIZE = 500
+
+var pageArena *dstore.PageArena;
 var fileArena *FileArena
 
 type FileArena struct {
-  files [ARENA_SIZE]*DataFile
+  files [FILE_ARENA_SIZE]*DataFile
   used int
   size int
 }
@@ -33,6 +38,7 @@ func (dir Directory) parent() Directory {
 func ClearGlobalState() {
   globalState = nil
   fileArena = nil
+  pageArena = nil
 }
 
 func ArenaAllocateDataFile(inode *Inode) (*DataFile, error) {
@@ -74,11 +80,16 @@ func InitGlobalState() {
   if fileArena == nil {
     fileArena = &FileArena{
       used: 0,
-      size: ARENA_SIZE,
+      size: FILE_ARENA_SIZE,
     }
 
-    for i := 0; i < ARENA_SIZE; i++ {
+    for i := 0; i < FILE_ARENA_SIZE; i++ {
       fileArena.files[i] = &DataFile{}
     }
+  }
+
+  // Creating Page Arena
+  if pageArena == nil {
+    pageArena = dstore.InitPageArena(PAGE_ARENA_SIZE)
   }
 }

@@ -96,7 +96,7 @@ func (file *DataFile) Open() error {
 }
 
 func (file *DataFile) Close() error {
-  if USE_ARENA {
+  if USE_FILE_ARENA {
     return ArenaReturnDataFile(file)
   }
 
@@ -122,7 +122,7 @@ func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
 }
 
 func initDataFile(inode *Inode) *DataFile {
-  if USE_ARENA {
+  if USE_FILE_ARENA {
     file, err := ArenaAllocateDataFile(inode)
     if err != nil { panic("Out of arena memory!") }
     return file
