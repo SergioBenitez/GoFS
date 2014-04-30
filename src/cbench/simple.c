@@ -1,5 +1,6 @@
-#include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <time.h>
 #include "benchmark.h"
 
@@ -42,117 +43,113 @@ init_filename(int n, int pfx_len, int end_len, char *pfix, char *end) {
 /**
  * A new FILE*[] is allocated and returned. Caller must free it.
  */
-FILE **
-open_many_c(Benchmark *b, int n, int (f) (FILE *, char *)) {
+int *
+open_many_c(Benchmark *b, int n, int (f) (int, char *)) {
   // pausing for filename and fd array allocation
   bench_pause(b);
 
   // creating initial filename and fd array
   int pfx_len = 9; // length of /dev/shm/ without null char
   char *filename = init_filename(n, pfx_len, 4, "/dev/shm/", ".out");
-  FILE **files = (FILE **)malloc(n * sizeof(FILE*));
+  int *fds = (int *)malloc(n * sizeof(int));
   
   // Done with allocations
   bench_resume(b);
 
   for (int i = 0; i < n; ++i) {
     filename[pfx_len + (i / 26)] += 1;
-    files[i] = fopen(filename, "wb");
-    if (f) f(files[i], filename);
+    fds[i] = open(filename, O_CREAT | O_RDWR, S_IRWXU | S_IRGRP | S_IROTH);
+    if (f) f(fds[i], filename);
   }
 
-  // deallocating filename
+  // deallocating filenames array
   bench_pause(b);
   free(filename);
   bench_resume(b);
 
-  return files;
+  return fds;
 }
 
 void
 unlink_all(Benchmark *b, int n) {
-  // pausing for filename and fd array allocation
+  // pausing for filename array allocation
   bench_pause(b);
-
-  // creating initial filename and fd array
   char *filename = init_filename(n, 9, 4, "/dev/shm/", ".out");
-  FILE **files = (FILE **)malloc(n * sizeof(FILE*));
-  
-  // Done with allocations
   bench_resume(b);
 
   // unlinking
   for (int i = 0; i < n; ++i) {
     filename[9 + (i / 26)] += 1;
-    remove(filename);
+    unlink(filename);
   }
   
-  // deallocating filename
+  // deallocating filenames array
   bench_pause(b);
   free(filename);
   bench_resume(b);
 }
 
-FILE **
+int *
 open_many(Benchmark *b, int n) {
   return open_many_c(b, n, NULL);
 }
 
 void
-close_all(FILE **files, int n) {
-  for (int i = 0; i < n; ++i) fclose(files[i]);
+close_all(int *fds, int n) {
+  for (int i = 0; i < n; ++i) close(fds[i]);
 }
 
 int
-help_close(FILE *f, char *name) {
+help_close(int fd, char *name) {
   UNUSED(name);
-  return fclose(f);
+  return close(fd);
 }
 
 int
-help_unlink(FILE *f, char *name) {
-  UNUSED(f);
-  return remove(name);
+help_unlink(int fd, char *name) {
+  UNUSED(fd);
+  return unlink(name);
 }
 
 int
-help_close_unlink(FILE *f, char *name) {
-  help_close(f, name);
-  return help_unlink(f, name);
+help_close_unlink(int fd, char *name) {
+  help_close(fd, name);
+  return help_unlink(fd, name);
 }
 
 void
 OCSingle(Benchmark *b) {
   UNUSED(b);
-  FILE *file = fopen("/dev/shm/test.out", "wb");
-  fclose(file);
+  int fd = open("/dev/shm/test.out", O_CREAT | O_RDWR,
+      S_IRWXU | S_IRGRP | S_IROTH);
+  close(fd);
 }
 
 void
 OtC(Benchmark *b) {
-  FILE **files = open_many(b, NUM);
-  close_all(files, NUM);
-  free(files);
+  int *fds = open_many(b, NUM);
+  close_all(fds, NUM);
+  free(fds);
 }
 
 void
 OC(Benchmark *b) {
-  FILE **files = open_many_c(b, NUM, help_close);
-  free(files);
+  int *fds = open_many_c(b, NUM, help_close);
+  free(fds);
 }
 
 void
 OtCtU(Benchmark *b) {
-  FILE **files = open_many(b, NUM);
-  close_all(files, NUM);
+  int *fds = open_many(b, NUM);
+  close_all(fds, NUM);
   unlink_all(b, NUM);
-  free(files);
+  free(fds);
 }
 
 void
 OCU(Benchmark *b) {
-  FILE **files = open_many_c(b, NUM, help_close_unlink);
-  free(files);
+  int *fds = open_many_c(b, NUM, help_close_unlink);
+  free(fds);
 }
 
 void
@@ -160,13 +157,13 @@ OWsC(Benchmark *b) {
   const size_t size = 1024;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
-    fwrite(content, 1, size, f);
-    return help_close(f, name);
+  int do_it(int fd, char *name) {
+    write(fd, content, size);
+    return help_close(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -174,14 +171,14 @@ OWsCU(Benchmark *b) {
   const size_t size = 1024;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
-    fwrite(content, 1, size, f);
-    help_close(f, name);
-    return help_unlink(f, name);
+  int do_it(int fd, char *name) {
+    write(fd, content, size);
+    help_close(fd, name);
+    return help_unlink(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -189,13 +186,13 @@ OWbC(Benchmark *b) {
   const size_t size = 40960;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
-    fwrite(content, 1, size, f);
-    return help_close(f, name);
+  int do_it(int fd, char *name) {
+    write(fd, content, size);
+    return help_close(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -203,14 +200,14 @@ OWbCU(Benchmark *b) {
   const size_t size = 40960;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
-    fwrite(content, 1, size, f);
-    help_close(f, name);
-    return help_unlink(f, name);
+  int do_it(int fd, char *name) {
+    write(fd, content, size);
+    help_close(fd, name);
+    return help_unlink(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -219,15 +216,15 @@ OWMsC(Benchmark *b) {
   const size_t many = 4096;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 0; i < many; ++i) {
-      fwrite(content, 1, size, f);
+      write(fd, content, size);
     }
-    return help_close(f, name);
+    return help_close(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -236,16 +233,16 @@ OWMsCU(Benchmark *b) {
   const size_t many = 4096;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 0; i < many; ++i) {
-      fwrite(content, 1, size, f);
+      write(fd, content, size);
     }
-    help_close(f, name);
-    return help_unlink(f, name);
+    help_close(fd, name);
+    return help_unlink(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -254,15 +251,15 @@ OWMbC(Benchmark *b) {
   const size_t many = 32;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 0; i < many; ++i) {
-      fwrite(content, 1, size, f);
+      write(fd, content, size);
     }
-    return help_close(f, name);
+    return help_close(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -271,16 +268,16 @@ OWMbCU(Benchmark *b) {
   const size_t many = 32;
   unsigned char *content = rand_bytes(b, size);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 0; i < many; ++i) {
-      fwrite(content, 1, size, f);
+      write(fd, content, size);
     }
-    help_close(f, name);
-    return help_unlink(f, name);
+    help_close(fd, name);
+    return help_unlink(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fd = open_many_c(b, NUM, do_it);
+  free(fd);
 }
 
 void
@@ -289,15 +286,15 @@ OWMbbC(Benchmark *b) {
   const size_t many = 4096;
   unsigned char *content = rand_bytes(b, start_size * many);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 1; i <= many; ++i) {
-      fwrite(content, 1, i * start_size, f);
+      write(fd, content, i * start_size);
     }
-    return help_close(f, name);
+    return help_close(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 void
@@ -306,16 +303,16 @@ OWMbbCU(Benchmark *b) {
   const size_t many = 4096;
   unsigned char *content = rand_bytes(b, start_size * many);
 
-  int do_it(FILE *f, char *name) {
+  int do_it(int fd, char *name) {
     for (size_t i = 1; i <= many; ++i) {
-      fwrite(content, 1, i * start_size, f);
+      write(fd, content, i * start_size);
     }
-    help_close(f, name);
-    return help_unlink(f, name);
+    help_close(fd, name);
+    return help_unlink(fd, name);
   }
 
-  FILE **files = open_many_c(b, NUM, do_it);
-  free(files);
+  int *fds = open_many_c(b, NUM, do_it);
+  free(fds);
 }
 
 // Clears the /dev/shm/ directory
