@@ -124,7 +124,7 @@ help_close_unlink(FILE *f, char *name) {
 void
 OCSingle(Benchmark *b) {
   UNUSED(b);
-  FILE *file = fopen("/dev/shm/test", "wb");
+  FILE *file = fopen("/dev/shm/test.out", "wb");
   fclose(file);
 }
 
@@ -318,20 +318,26 @@ OWMbbCU(Benchmark *b) {
   free(files);
 }
 
+// Clears the /dev/shm/ directory
+void
+cleanup() {
+  system("exec rm -r /dev/shm/*.out");
+}
+
 int main() {
-  benchmark("Open-Close-Single", OCSingle, 2);
-  benchmark("Open-Close", OtC, 2);
-  benchmark("OpenAndClose", OC, 2);
-  benchmark("Open-Close-Unlink", OtCtU, 4);
-  benchmark("OpenAndCloseAndUnlink", OCU, 4);
-  benchmark("OpenWriteSmallClose", OWsC, 2);
-  benchmark("OpenWriteSmallCloseUnlink", OWsCU, 4);
-  benchmark("OpenWriteBigClose", OWbC, 4);
-  benchmark("OpenWriteBigCloseUnlink", OWbCU, 5);
-  benchmark("OpenWriteManySmallClose", OWMsC, 3);
-  benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, 5);
-  benchmark("OpenWriteManyBigClose", OWMbC, 5);
-  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, 6);
-  benchmark("OpenWriteManyBiggerClose", OWMbbC, 5);
-  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, 6);
+  benchmark("Open-Close-Single", OCSingle, cleanup, 2);
+  benchmark("Open-Close", OtC, cleanup, 2);
+  benchmark("OpenAndClose", OC, cleanup, 2);
+  benchmark("Open-Close-Unlink", OtCtU, NULL, 4);
+  benchmark("OpenAndCloseAndUnlink", OCU, NULL, 4);
+  benchmark("OpenWriteSmallClose", OWsC, cleanup, 2);
+  benchmark("OpenWriteSmallCloseUnlink", OWsCU, NULL, 4);
+  benchmark("OpenWriteBigClose", OWbC, cleanup, 4);
+  benchmark("OpenWriteBigCloseUnlink", OWbCU, NULL, 5);
+  benchmark("OpenWriteManySmallClose", OWMsC, cleanup, 3);
+  benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, NULL, 5);
+  benchmark("OpenWriteManyBigClose", OWMbC, cleanup, 5);
+  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, NULL, 6);
+  benchmark("OpenWriteManyBiggerClose", OWMbbC, cleanup, 5);
+  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, NULL, 6);
 }

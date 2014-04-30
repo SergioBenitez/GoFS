@@ -37,7 +37,7 @@ func openMany(b *testing.B, p *gofs.ProcState, n int) []gofs.FileDescriptor {
   return openManyC(b, p, n, func(gofs.FileDescriptor, string) { })
 }
 
-func openManyC(b *testing.B, p *gofs.ProcState, n int, 
+func openManyC(b *testing.B, p *gofs.ProcState, n int,
 f func(gofs.FileDescriptor, string)) []gofs.FileDescriptor {
   b.StopTimer()
   fds := make([]gofs.FileDescriptor, n)

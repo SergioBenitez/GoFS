@@ -16,7 +16,8 @@ typedef struct Benchmark_T {
 } Benchmark;
 
 typedef void (bench_func)(Benchmark *);
+typedef void (bench_clean)(void);
 
-void benchmark(char *name, bench_func f, double min_time);
+void benchmark(char *name, bench_func f, bench_clean c, double min_time);
 void bench_pause(Benchmark *b);
 void bench_resume(Benchmark *b);
