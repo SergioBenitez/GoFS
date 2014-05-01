@@ -96,13 +96,11 @@ func (file *DataFile) Open() error {
 }
 
 func (file *DataFile) Close() error {
-  if USE_FILE_ARENA {
-    return ArenaReturnDataFile(file)
-  }
-
   file.seek = 0
   file.inode.lastAccessTime = time.Now()
   file.status = Closed
+
+  if USE_FILE_ARENA { return ArenaReturnDataFile(file) }
   return nil
 }
 
@@ -137,6 +135,9 @@ func initDataFile(inode *Inode) *DataFile {
 
 func initInode() *Inode {
   return &Inode{
-    data: dstore.InitArrayStore(0),
+    data: dstore.InitPageStore(),
   }
+  // return &Inode{
+  //   data: dstore.InitArrayStore(0),
+  // }
 }

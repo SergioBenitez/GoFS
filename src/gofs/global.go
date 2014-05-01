@@ -7,11 +7,9 @@ import (
 )
 
 const USE_FILE_ARENA = true
-
 const FILE_ARENA_SIZE = 100
-const PAGE_ARENA_SIZE = 500
+const PAGE_ARENA_SIZE = 1000
 
-var pageArena *dstore.PageArena;
 var fileArena *FileArena
 
 type FileArena struct {
@@ -38,7 +36,7 @@ func (dir Directory) parent() Directory {
 func ClearGlobalState() {
   globalState = nil
   fileArena = nil
-  pageArena = nil
+  dstore.GlobalPageArena = nil
 }
 
 func ArenaAllocateDataFile(inode *Inode) (*DataFile, error) {
@@ -88,8 +86,7 @@ func InitGlobalState() {
     }
   }
 
-  // Creating Page Arena
-  if pageArena == nil {
-    pageArena = dstore.InitPageArena(PAGE_ARENA_SIZE)
+  if dstore.GlobalPageArena == nil {
+    dstore.GlobalPageArena = dstore.InitPageArena(PAGE_ARENA_SIZE)
   }
 }

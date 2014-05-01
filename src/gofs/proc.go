@@ -160,9 +160,9 @@ func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64,
 
 /**
  * Resource freeing happens below. The memory of an inode is freed after it is
- * referenced by no open files unlinked from all directories. This is because an
- * inode can only be referenced from two different locations: 1) a file, and 2)
- * a directory.
+ * referenced by no open files and unlinked from all directories. This is
+ * because an inode can only be referenced from two different locations: 
+ * 1) a file, and 2) a directory.
  */
 
 func (proc *ProcState) Unlink(path string) error {

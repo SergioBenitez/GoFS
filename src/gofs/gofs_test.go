@@ -167,7 +167,7 @@ func TestReadWriteSeek(t *testing.T) {
   p.safeRead(t, fd, buffer)
   AssertEqualBytes(t, buffer[:len(content)], content)
 
-  // randomly seek 5000 times and verify 250 bytes
+  // randomly seek 5000 times and verify 256 bytes
   bytes := 256
   buf := make([]byte, bytes)
   for i := 0; i < 5000; i++ {
