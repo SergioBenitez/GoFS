@@ -1,21 +1,21 @@
 package gofs
 
 import (
-  "os"
   "errors"
   "gofs/dstore"
+  "os"
 )
 
 const USE_FILE_ARENA = true
 const FILE_ARENA_SIZE = 100
-const PAGE_ARENA_SIZE = 1000
+const PAGE_ARENA_SIZE = 256 * 4 // 4MB
 
 var fileArena *FileArena
 
 type FileArena struct {
   files [FILE_ARENA_SIZE]*DataFile
-  used int
-  size int
+  used  int
+  size  int
 }
 
 func initDirectory(parent Directory) Directory {
@@ -40,25 +40,27 @@ func ClearGlobalState() {
 }
 
 func ArenaAllocateDataFile(inode *Inode) (*DataFile, error) {
-  if fileArena.used >= fileArena.size { 
+  if fileArena.used >= fileArena.size {
     panic("Out of arena memory!")
     return nil, errors.New("Out Of Memory!")
   }
 
   file := fileArena.files[fileArena.used]
   file.seek = 0
-  file.inode = inode;
-  file.status = Open;
+  file.inode = inode
+  file.status = Open
 
   fileArena.used += 1
   return file, nil
 }
 
 func ArenaReturnDataFile(file *DataFile) error {
-  if fileArena.used <= 0 { return errors.New("Over-Freeing") }
+  if fileArena.used <= 0 {
+    return errors.New("Over-Freeing")
+  }
 
-  file.inode = nil;
-  file.status = Closed;
+  file.inode = nil
+  file.status = Closed
 
   fileArena.used -= 1
   fileArena.files[fileArena.used] = file

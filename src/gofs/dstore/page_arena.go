@@ -1,6 +1,6 @@
 package dstore
 
-import "fmt"
+// import "fmt"
 
 var GlobalPageArena *PageArena
 
@@ -18,7 +18,7 @@ func (a *PageArena) grow() {
 
 // NOTE! Page is not guaranteed to be zeroed!
 func (a *PageArena) AllocatePage() *[PAGE_SIZE]byte {
-  fmt.Println("Allocating page. Pages so far:", a.alloc)
+  // fmt.Println("Allocating page. Pages so far:", a.alloc)
 
   if a.alloc >= a.size { a.grow() }
   if a.alloc >= a.size { panic("Out of memory @ pageArena!") }
@@ -36,7 +36,7 @@ func (a *PageArena) ReturnPage(page *[PAGE_SIZE]byte) {
 }
 
 func InitPageArena(size int) *PageArena {
-  fmt.Println("New arena with size", size)
+  // fmt.Println("New arena with size", size)
 
   arena := &PageArena{
     alloc: 0,

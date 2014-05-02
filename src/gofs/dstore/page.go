@@ -42,12 +42,13 @@ func (s *PageStore) Read(o int, p []byte) (int, error) {
 
   read := 0
   for entry := 0; entry < entriesToRead; entry++ {
-    read += copy(p[read:], (*s.getEntry(start + entry))[offset:])
+    page := *s.getEntry(start + entry)
+    if (page == nil) { panic("Page is nil?") }
+    read += copy(p[read:], page[offset:])
     if offset != 0 { offset = 0 }
   }
 
   return read, nil
-  // return copy(p, s.data[o:]), nil
 }
 
 func (s *PageStore) Write(o int, p []byte) (int, error) {

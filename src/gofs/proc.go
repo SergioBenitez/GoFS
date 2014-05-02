@@ -117,6 +117,12 @@ func (proc *ProcState) Link(src string, dst string) error {
   _, exists := dstDir[baseName]
   if exists { return errors.New("Destination file already exists.") }
 
+  switch file.(type) {
+  case *Inode:
+    inode := file.(*Inode)
+    inode.incrementLinkCount()
+  }
+
   dstDir[baseName] = file
   return nil
 }
@@ -168,6 +174,15 @@ func (proc *ProcState) Seek(fd FileDescriptor, offset int64, whence int) (int64,
 func (proc *ProcState) Unlink(path string) error {
   dir, name, err := proc.resolveDirPath(path)
   if err != nil { return err }
+
+  file, ok := dir[name]
+  if !ok { return errors.New("Cannot unlink nonexisting file.") }
+
+  switch file.(type) {
+  case *Inode:
+    inode := file.(*Inode)
+    inode.decrementLinkCount()
+  }
 
   delete(dir, name)
   return nil

@@ -33,6 +33,9 @@ type Inode struct {
   lastModTime time.Time
   lastAccessTime time.Time
   createTime time.Time
+
+  linkCount int
+  fileCount int
 }
 
 const MAX_DESCRIPTORS = 1024;

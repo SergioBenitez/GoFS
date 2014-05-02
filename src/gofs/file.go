@@ -1,9 +1,10 @@
 package gofs
 
 import (
-  "time"
+  "fmt"
   "errors"
   "gofs/dstore"
+  "time"
 )
 
 /**
@@ -22,22 +23,24 @@ import (
 * So, are devices files? Sometimes. I posit that if the device can be opened,
 * closed, read, written, and have only a minimal additional interface, then we
 * can call them files. Thankfully, most devices fit into this umbrella: shared
-* memory, networking devices, including sockets, the console, and more. 
+* memory, networking devices, including sockets, the console, and more.
 *
 * Older notes:
 * Every Open() call creates a new entry in the file table. That is, besides the
 * underlying file contents, two different open calls for the same file share
 * nothing (file pointer, permissions, etc). However, by sharing the file
 * descriptor, two processes can modify the same entry in the file table.
-*/
+ */
 
 type FileStatus uint
+
 const (
   Closed FileStatus = iota
   Open
 )
 
 type FileAccess uint
+
 const (
   Read FileAccess = iota
   Write
@@ -45,15 +48,15 @@ const (
 )
 
 type DataFile struct {
-  inode *Inode
-  seek int
+  inode  *Inode
+  seek   int
   status FileStatus
 }
 
 func (file *DataFile) checkAccess(acc FileAccess) error {
   switch file.status {
-    case Closed:
-      return errors.New("File is closed.")
+  case Closed:
+    return errors.New("File is closed.")
   }
   return nil
 }
@@ -100,26 +103,31 @@ func (file *DataFile) Close() error {
   file.inode.lastAccessTime = time.Now()
   file.status = Closed
 
+  file.inode.decrementFileCount()
   if USE_FILE_ARENA { return ArenaReturnDataFile(file) }
   return nil
 }
 
 func (file *DataFile) Seek(offset int64, whence int) (int64, error) {
-  if err := file.checkAccess(Seek); err != nil { return 0, err }
+  if err := file.checkAccess(Seek); err != nil {
+    return 0, err
+  }
 
   switch whence {
-    case SEEK_SET:
-      file.seek = int(offset);
-    case SEEK_CUR:
-      file.seek += int(offset);
-    case SEEK_END:
-      file.seek = file.Size() + int(offset);
+  case SEEK_SET:
+    file.seek = int(offset)
+  case SEEK_CUR:
+    file.seek += int(offset)
+  case SEEK_END:
+    file.seek = file.Size() + int(offset)
   }
 
   return int64(file.seek), nil
 }
 
 func initDataFile(inode *Inode) *DataFile {
+  inode.incrementFileCount()
+
   if USE_FILE_ARENA {
     file, err := ArenaAllocateDataFile(inode)
     if err != nil { panic("Out of arena memory!") }
@@ -127,15 +135,45 @@ func initDataFile(inode *Inode) *DataFile {
   }
 
   return &DataFile{
-    inode: inode,
-    seek: 0,
+    inode:  inode,
+    seek:   0,
     status: Open,
   }
+}
+
+func (inode *Inode) destroyIfNeeded() {
+  if inode.linkCount == 0 && inode.fileCount == 0 {
+    fmt.Println("Destroy!")
+  }
+}
+
+func (inode *Inode) decrementLinkCount() {
+  // fmt.Println("||||| -- Link Count:", inode.linkCount)
+  inode.linkCount--
+  inode.destroyIfNeeded()
+}
+
+func (inode *Inode) incrementLinkCount() {
+  // fmt.Println("||||| ++ Link Count:", inode.linkCount)
+  inode.linkCount++
+}
+
+func (inode *Inode) decrementFileCount() {
+  // fmt.Println("||||| -- File Count:", inode.fileCount)
+  inode.fileCount--
+  inode.destroyIfNeeded()
+}
+
+func (inode *Inode) incrementFileCount() {
+  // fmt.Println("||||| ++ File Count:", inode.fileCount)
+  inode.fileCount++
 }
 
 func initInode() *Inode {
   return &Inode{
     data: dstore.InitPageStore(),
+    linkCount: 1,
+    fileCount: 0,
   }
   // return &Inode{
   //   data: dstore.InitArrayStore(0),
