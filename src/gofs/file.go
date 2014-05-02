@@ -1,7 +1,7 @@
 package gofs
 
 import (
-  "fmt"
+  // "fmt"
   "errors"
   "gofs/dstore"
   "time"
@@ -143,7 +143,12 @@ func initDataFile(inode *Inode) *DataFile {
 
 func (inode *Inode) destroyIfNeeded() {
   if inode.linkCount == 0 && inode.fileCount == 0 {
-    fmt.Println("Destroy!")
+    switch inode.data.(type) {
+    case *dstore.PageStore:
+      data := (inode.data).(*dstore.PageStore)
+      data.ReleasePages()
+    }
+    // fmt.Println("Destroy!")
   }
 }
 

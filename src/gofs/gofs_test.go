@@ -192,10 +192,6 @@ func TestReadWriteSeek(t *testing.T) {
 }
 
 func TestReadWriteLargeSeek(t *testing.T) {
-  // Let's get some fresh arenas
-  ClearGlobalState()
-  InitGlobalState()
-
   p := InitProc()
   filename := "file"
   size := 4096 * 256 * 4 // 4MB
@@ -221,10 +217,6 @@ func TestReadWriteLargeSeek(t *testing.T) {
 
   p.safeClose(t, fd)
   p.safeUnlink(t, filename)
-
-  // Let's get some fresh arenas
-  ClearGlobalState()
-  InitGlobalState()
 }
 
 func TestMkDirAndLink(t *testing.T) {
