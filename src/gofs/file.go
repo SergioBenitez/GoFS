@@ -175,12 +175,12 @@ func (inode *Inode) incrementFileCount() {
 }
 
 func initInode() *Inode {
+  store := dstore.InitPageStore()
+  // store := dstore.InitArrayStore(0)
+
   return &Inode{
-    data: dstore.InitPageStore(),
+    data: store,
     linkCount: 1,
     fileCount: 0,
   }
-  // return &Inode{
-  //   data: dstore.InitArrayStore(0),
-  // }
 }

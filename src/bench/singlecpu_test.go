@@ -68,13 +68,13 @@ func closeAll(b *testing.B, p *gofs.ProcState, fs []gofs.FileDescriptor) {
 func unlinkAll(b *testing.B, p *gofs.ProcState, fs []gofs.FileDescriptor) {
   b.StopTimer()
   filename := make([]byte, ceilDiv(len(fs), 26))
-  for i := range filename { filename[i] = 'a' }
+  for i := range filename { filename[i] = '@' }
   b.StartTimer()
 
   for i := range fs {
-    err := p.Unlink(string(filename))
-    if err != nil { b.Fatal("bad unlink") }
     filename[i / 26] += 1
+    err := p.Unlink(string(filename))
+    if err != nil { b.Fatal("bad unlink:", err) }
   }
 }
 
