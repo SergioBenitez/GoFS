@@ -1,4 +1,8 @@
+#ifndef _SB_FILE_H
+#define _SB_FILE_H
+
 #include <stdint.h>
+#include <stddef.h>
 
 // Access Flags
 #define O_RDONLY    (1 << 0)
@@ -48,4 +52,10 @@ typedef struct FileHandle_T {
   FILE_STATUS status;
 } FileHandle;
 
-FileDescriptor open(Process *p, const char *name, uint32_t);
+FileDescriptor open(Process *, const char *path, uint32_t flags);
+size_t read(Process *, FileDescriptor, void *dst, size_t);
+size_t write(Process *, FileDescriptor, const void *src, size_t);
+int close(FileDescriptor);
+int unlink(const char *path);
+
+#endif // _SB_FILE_H
