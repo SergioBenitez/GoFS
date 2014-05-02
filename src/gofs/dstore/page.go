@@ -9,8 +9,8 @@ const ENTRIES = 256
 // Up to 257MB if ENTRIES = 256, PAGE_SIZE = 4096
 // = ENTRIES * PAGE_SIZE + ENTRIES^2 * PAGE_SIZE
 type PageStore struct {
-  single *[ENTRIES]*[PAGE_SIZE]byte            // 1MB
-  double *[ENTRIES]*[ENTRIES]*[PAGE_SIZE]byte   // 256MB
+  single *[ENTRIES][]byte            // 1MB
+  double *[ENTRIES]*[ENTRIES][]byte   // 256MB
   pagesUsed int
   lastEntryBytesUsed int
 }
@@ -19,17 +19,17 @@ func ceilDiv(x int, y int) int {
   return (x + y - 1) / y
 }
 
-func (s *PageStore) getEntry(num int) **[PAGE_SIZE]byte {
-  if num < ENTRIES { 
-    if s.single == nil { s.single = new([ENTRIES]*[PAGE_SIZE]byte) }
+func (s *PageStore) getEntry(num int) *[]byte {
+  if num < ENTRIES {
+    if s.single == nil { s.single = new([ENTRIES][]byte) }
     return &s.single[num]
   }
 
   doubleEntry := num - ENTRIES
   slot := doubleEntry / ENTRIES
   entryOffset := doubleEntry % ENTRIES
-  if s.double == nil { s.double = new([ENTRIES]*[ENTRIES]*[PAGE_SIZE]byte) }
-  if s.double[slot] == nil { s.double[slot] = new([ENTRIES]*[PAGE_SIZE]byte) }
+  if s.double == nil { s.double = new([ENTRIES]*[ENTRIES][]byte) }
+  if s.double[slot] == nil { s.double[slot] = new([ENTRIES][]byte) }
   return &s.double[slot][entryOffset]
 }
 
@@ -80,7 +80,7 @@ func (s *PageStore) Size() int {
 }
 
 // Releases all pages in a singly-indirect block of pages
-func (s *PageStore) ReleaseSinglePages(pages *[ENTRIES]*[PAGE_SIZE]byte) {
+func (s *PageStore) ReleaseSinglePages(pages *[ENTRIES][]byte) {
   for _, value := range pages {
     if value != nil { GlobalPageArena.ReturnPage(value) }
   }
