@@ -2,17 +2,12 @@
 #include <stdio.h>
 #include "inc/proc.h"
 #include "inc/file.h"
+#include "inc/directory.h"
 
 #define UNUSED(x) (void)(x) 
 
 FileDescriptor get_fd(Process *);
 void return_fd(Process *, FileDescriptor);
-
-void
-panic(const char *message) {
-  fputs(message, stderr);
-  exit(1);
-}
 
 FileDescriptor
 get_fd(Process *p) {
@@ -37,33 +32,30 @@ return_fd(Process *p, FileDescriptor fd) {
  */
 FileHandle *
 open_file(Process *p, const char *path, uint32_t flags) {
-  UNUSED(p);
-  UNUSED(path);
-
   /*
    * Something like this needs to go here:
    *
-   * Inode *inode = resolvePath(p, path);
-   * if (inode != NULL) return newFileHandle(inode);
+   * Directory *dir = resolvePath(p, path);
+   * char *filename = basename(path);
+   * Inode *inode = directory_get(dir, filename);
    *
-   * Otherwise, we ALWAYS allocate a new inode.
+   * Otherwise, we only have 1-level directories.
    */
 
-  if (flags & O_CREAT) {
-    Inode *inode = new_inode();
-    return new_handle(inode);
-  } else {
-    panic("Directories not yet implemented.");
-    return NULL;
+  Inode *inode = directory_get(p->cwd, path);
+  if (inode == NULL && flags & O_CREAT) {
+    inode = new_inode();
+    directory_insert(p->cwd, path, inode);
   }
+
+  if (inode == NULL)
+    panic("No O_CREAT flag and file not found.");
+
+  return new_handle(inode);
 }
 
 FileDescriptor
 open(Process *p, const char *path, uint32_t flags) {
-  UNUSED(p);
-  UNUSED(path);
-  UNUSED(flags);
-
   FileDescriptor fd = get_fd(p);
   p->fd_table[fd] = open_file(p, path, flags);
   return fd;
@@ -79,9 +71,9 @@ close(Process *p, FileDescriptor fd) {
 
 int
 unlink(Process *p, const char *path) {
-  UNUSED(p);
-  UNUSED(path);
-  return 0;
+  // Again, as in open_file, need to resolve path for multi-level directories
+  // Also need to deal with inode reference counts.
+  return directory_remove(p->cwd, path);
 }
 
 size_t
@@ -100,13 +92,14 @@ Process *
 new_process() {
   Process *proc = (Process *)malloc(sizeof(Process));
   proc->next_fd = START_FD; // 0, 1, 2 are taken
+  proc->cwd = new_directory(NULL); // FIXME: Need global dir.
   return proc;
 }
 
 int
 main() {
   Process *p = new_process();
-  for (int i = 0; i < 1e6; i++) {
+  for (int i = 0; i < 1e7; i++) {
     FileDescriptor fd = open(p, "myfile", O_CREAT);
     close(p, fd);
   }

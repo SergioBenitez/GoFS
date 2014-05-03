@@ -4,8 +4,9 @@
 #include "fs_types.h"
 
 Directory *new_directory(Directory *parent);
-void directory_insert(Directory *, char *name, void *);
-void directory_remove(Directory *, char *name);
-Inode *directory_get(Directory *, char *name);
+void directory_insert(Directory *, const char *name, void *);
+int directory_remove(Directory *, const char *name);
+Inode *directory_get(Directory *, const char *name);
+void directory_print(Directory *);
 
 #endif

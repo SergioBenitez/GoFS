@@ -4,6 +4,8 @@
 #include <time.h>
 #include <sys/types.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 /**
  * Directory/Inode/Entry Hackery Note
@@ -81,5 +83,11 @@ typedef struct Process_T {
   uint16_t free_fds[MAX_FDS];
   int next_fd;
 } Process;
+
+void inline
+panic(const char *message) {
+  fputs(message, stderr);
+  exit(1);
+}
 
 #endif

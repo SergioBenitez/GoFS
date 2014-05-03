@@ -4,25 +4,8 @@
 
 #define UNUSED(x) (void)(x) 
 
-void
-directory_insert(Directory *dir, char *name, void *item) {
-  UNUSED(dir);
-  UNUSED(name);
-  UNUSED(item);
-}
-
-void 
-directory_remove(Directory *dir, char *name) {
-  UNUSED(dir);
-  UNUSED(name);
-}
-
-Inode *
-directory_get(Directory *dir, char *name) {
-  UNUSED(dir);
-  UNUSED(name);
-  return NULL;
-}
+DirectoryEntry new_directory_entry(const char *, void *);
+DirectoryEntry *directory_get_entry(Directory *, const char *);
 
 DirectoryEntry
 new_directory_entry(const char *name, void *inode) {
@@ -36,10 +19,77 @@ new_directory_entry(const char *name, void *inode) {
   return entry;
 }
 
+DirectoryEntry *
+directory_get_entry(Directory *dir, const char *name) {
+  for (int i = 0; i < MAX_ENTRIES; ++i) {
+    DirectoryEntry *entry = &dir->entries[i];
+    if (name == NULL) {
+      if (entry->name == NULL) return entry;
+    } else {
+      if (entry->name == NULL) continue;
+      if (!strcmp(entry->name, name)) return entry;
+    }
+  }
+  
+  return NULL;
+}
+
+void
+directory_insert(Directory *dir, const char *name, void *item) {
+  DirectoryEntry new_entry = new_directory_entry(name, item);
+  DirectoryEntry *entry = directory_get_entry(dir, NULL);
+
+  if (entry == NULL) panic("Directory is full!");
+  *entry = new_entry;
+}
+
+int 
+directory_remove(Directory *dir, const char *name) {
+  DirectoryEntry *entry = directory_get_entry(dir, name);
+  if (entry == NULL) return -1;
+
+  free(entry->name);
+  entry->name = NULL;
+  entry->inode = NULL;
+
+  return 0;
+  // Decrement the inode link count here?
+  // Who's responsibility should it be? Probably not the directories.
+}
+
+Inode *
+directory_get(Directory *dir, const char *name) {
+  DirectoryEntry *entry = directory_get_entry(dir, name);
+  return (entry == NULL) ? NULL : entry->inode;
+}
+
 Directory *
 new_directory(Directory *parent) {
   Directory *dir = (Directory *)malloc(sizeof(Directory));
-  dir->entries[0] = new_directory_entry("..", parent);
+  Directory *parentDir = (parent == NULL) ? dir : parent;
+  dir->entries[0] = new_directory_entry("..", parentDir);
   dir->entries[1] = new_directory_entry(".", dir);
+  dir->type = F_DIRECTORY;
   return dir;
+}
+
+void
+directory_print(Directory *dir) {
+  int num_files = 0;
+  int num_dirs = 0;
+  for (int i = 0; i < MAX_ENTRIES; ++i) {
+    DirectoryEntry entry = dir->entries[i];
+    if (entry.name != NULL) {
+       if (entry.inode->type == F_DATA) num_files++;
+       if (entry.inode->type == F_DIRECTORY) num_dirs++;
+    }
+  }
+
+  printf("\nDir Contents: %d directories, %d files\n", num_dirs, num_files);
+  for (int i = 0; i < MAX_ENTRIES; ++i) {
+    DirectoryEntry entry = dir->entries[i];
+    if (entry.name != NULL) {
+      printf("%s (type: %d)\n", entry.name, entry.inode->type);
+    }
+  }
 }
