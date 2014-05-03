@@ -1,0 +1,57 @@
+#include "inc/file.h"
+#include <stdlib.h>
+#include <time.h>
+
+#define UNUSED(x) (void)(x) 
+
+Inode *
+newInode() {
+  Inode *inode = (Inode *)malloc(sizeof(Inode));
+  inode->link_count = 1;
+
+  time_t now = time(NULL);
+  inode->create_time = now;
+  inode->access_time = now;
+  inode->mod_time = now;
+
+  return inode;
+}
+
+void
+deleteInode(Inode *inode) {
+  // Need to account for reference counting
+  free(inode);
+}
+
+FileHandle *
+newFileHandle(Inode *inode) {
+  FileHandle *handle = (FileHandle *)malloc(sizeof(FileHandle));
+
+  inode->file_count++;
+  handle->inode = inode;
+  handle->status = F_OPEN;
+
+  return handle;
+}
+
+void
+deleteFileHandle(FileHandle *handle) {
+  // Need to account for reference counting
+  free(handle);
+}
+
+size_t
+file_read(FileHandle *handle, void *dst, size_t num) {
+  UNUSED(handle);
+  UNUSED(dst);
+  UNUSED(num);
+  return 0;
+}
+
+size_t
+file_write(FileHandle *handle, const void *src, size_t num) {
+  UNUSED(handle);
+  UNUSED(src);
+  UNUSED(num);
+  return 0;
+}

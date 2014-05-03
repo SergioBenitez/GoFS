@@ -1,8 +1,9 @@
 #ifndef _SB_FILE_H
 #define _SB_FILE_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <sys/types.h>
+#include "fs_types.h"
 
 // Access Flags
 #define O_RDONLY    (1 << 0)
@@ -20,42 +21,14 @@
 #define O_EVTONLY   (1 << 12)
 #define O_CLOEXEC   (1 << 13)
 
-// Array Size Constants
-#define MAX_BLOCKS  256
-#define MAX_FDS     512
+size_t file_read(FileHandle *, void *dst, size_t);
+size_t file_write(FileHandle *, const void *src, size_t);
+off_t file_seek(FileHandle *, off_t, int whence);
 
-typedef int FileDescriptor;
+Inode *newInode();
+FileHandle *newFileHandle(Inode *);
 
-typedef enum FILE_STATUS_E {
-  F_OPEN,
-  F_CLOSED,
-} FILE_STATUS;
-
-typedef struct Inode_T {
-  char *blocks[MAX_BLOCKS];
-
-  double mod_time;
-  double access_time;
-  double create_time;
-
-  int link_count;
-  int file_count;
-} Inode;
-
-typedef struct Process_T {
-  Inode *file_descriptor_table[MAX_FDS];
-} Process;
-
-typedef struct FileHandle_T {
-  Inode *inode;
-  int seek;
-  FILE_STATUS status;
-} FileHandle;
-
-FileDescriptor open(Process *, const char *path, uint32_t flags);
-size_t read(Process *, FileDescriptor, void *dst, size_t);
-size_t write(Process *, FileDescriptor, const void *src, size_t);
-int close(FileDescriptor);
-int unlink(const char *path);
+void deleteInode(Inode *);
+void deleteFileHandle(FileHandle *);
 
 #endif // _SB_FILE_H
