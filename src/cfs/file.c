@@ -5,7 +5,7 @@
 #define UNUSED(x) (void)(x) 
 
 Inode *
-newInode() {
+new_inode() {
   Inode *inode = (Inode *)malloc(sizeof(Inode));
   inode->link_count = 1;
 
@@ -18,13 +18,13 @@ newInode() {
 }
 
 void
-deleteInode(Inode *inode) {
+delete_inode(Inode *inode) {
   // Need to account for reference counting
   free(inode);
 }
 
 FileHandle *
-newFileHandle(Inode *inode) {
+new_handle(Inode *inode) {
   FileHandle *handle = (FileHandle *)malloc(sizeof(FileHandle));
 
   inode->file_count++;
@@ -35,7 +35,7 @@ newFileHandle(Inode *inode) {
 }
 
 void
-deleteFileHandle(FileHandle *handle) {
+delete_handle(FileHandle *handle) {
   // Need to account for reference counting
   free(handle);
 }

@@ -25,10 +25,10 @@ size_t file_read(FileHandle *, void *dst, size_t);
 size_t file_write(FileHandle *, const void *src, size_t);
 off_t file_seek(FileHandle *, off_t, int whence);
 
-Inode *newInode();
-FileHandle *newFileHandle(Inode *);
+Inode *new_inode();
+FileHandle *new_handle(Inode *);
 
-void deleteInode(Inode *);
-void deleteFileHandle(FileHandle *);
+void delete_inode(Inode *);
+void delete_handle(FileHandle *);
 
 #endif // _SB_FILE_H

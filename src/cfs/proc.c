@@ -5,8 +5,8 @@
 
 #define UNUSED(x) (void)(x) 
 
-FileDescriptor getNewFD(Process *);
-void returnFD(Process *, FileDescriptor);
+FileDescriptor get_fd(Process *);
+void return_fd(Process *, FileDescriptor);
 
 void
 panic(const char *message) {
@@ -15,8 +15,8 @@ panic(const char *message) {
 }
 
 FileDescriptor
-getNewFD(Process *p) {
-  if (p->next_fd > MAX_FDS) panic("Out of FDs!");
+get_fd(Process *p) {
+  if (p->next_fd >= MAX_FDS) panic("Out of FDs!");
 
   FileDescriptor next = p->free_fds[p->next_fd];
   FileDescriptor fd = (next == 0) ? p->next_fd : next;
@@ -26,7 +26,7 @@ getNewFD(Process *p) {
 }
 
 void
-returnFD(Process *p, FileDescriptor fd) {
+return_fd(Process *p, FileDescriptor fd) {
   if (p->next_fd <= START_FD) panic("Over-freeing FDS!");
   p->free_fds[--p->next_fd] = fd;
 }
@@ -36,7 +36,7 @@ returnFD(Process *p, FileDescriptor fd) {
  * a file descriptor to the file object.
  */
 FileHandle *
-openFile(Process *p, const char *path, uint32_t flags) {
+open_file(Process *p, const char *path, uint32_t flags) {
   UNUSED(p);
   UNUSED(path);
 
@@ -50,8 +50,8 @@ openFile(Process *p, const char *path, uint32_t flags) {
    */
 
   if (flags & O_CREAT) {
-    Inode *inode = newInode();
-    return newFileHandle(inode);
+    Inode *inode = new_inode();
+    return new_handle(inode);
   } else {
     panic("Directories not yet implemented.");
     return NULL;
@@ -64,16 +64,16 @@ open(Process *p, const char *path, uint32_t flags) {
   UNUSED(path);
   UNUSED(flags);
 
-  FileDescriptor fd = getNewFD(p);
-  p->fd_table[fd] = openFile(p, path, flags);
+  FileDescriptor fd = get_fd(p);
+  p->fd_table[fd] = open_file(p, path, flags);
   return fd;
 }
 
 int
 close(Process *p, FileDescriptor fd) {
   FileHandle *handle = p->fd_table[fd];
-  returnFD(p, fd);
-  deleteFileHandle(handle);
+  return_fd(p, fd);
+  delete_handle(handle);
   return 0;
 }
 
@@ -97,7 +97,7 @@ write(Process *p, FileDescriptor fd, const void *src, size_t num) {
 }
 
 Process *
-newProcess() {
+new_process() {
   Process *proc = (Process *)malloc(sizeof(Process));
   proc->next_fd = START_FD; // 0, 1, 2 are taken
   return proc;
@@ -105,8 +105,8 @@ newProcess() {
 
 int
 main() {
-  Process *p = newProcess();
-  for (int i = 0; i < 1e3; i++) {
+  Process *p = new_process();
+  for (int i = 0; i < 1e6; i++) {
     FileDescriptor fd = open(p, "myfile", O_CREAT);
     close(p, fd);
   }

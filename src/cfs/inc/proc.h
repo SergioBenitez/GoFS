@@ -8,7 +8,7 @@
 // The file descriptor to start with
 #define START_FD 3
 
-Process *newProcess();
+Process *new_process();
 
 FileDescriptor open(Process *, const char *path, uint32_t flags);
 size_t read(Process *, FileDescriptor, void *dst, size_t);
