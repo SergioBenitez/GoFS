@@ -49,6 +49,7 @@ open_file(Process *p, const char *path, uint32_t flags) {
   if (inode == NULL && flags & O_CREAT) {
     inode = new_inode();
     directory_insert(p->cwd, path, inode);
+    inode_inc_link_ref(inode);
   }
 
   if (inode == NULL)
@@ -74,9 +75,23 @@ close(Process *p, FileDescriptor fd) {
 }
 
 int
+link(Process *p, const char *old_path, const char *new_path) {
+  Inode *inode = directory_get(p->cwd, old_path);
+  if (inode == NULL) return -1;
+
+  int success = directory_insert(p->cwd, new_path, inode);
+  if (!success) inode_inc_link_ref(inode);
+  return success;
+}
+
+int
 unlink(Process *p, const char *path) {
   // Again, as in open_file, need to resolve path for multi-level directories
   // Also need to deal with inode reference counts.
+  Inode *inode = directory_get(p->cwd, path);
+  if (inode == NULL) return -1;
+
+  inode_dec_link_ref(inode);
   return directory_remove(p->cwd, path);
 }
 
@@ -107,6 +122,16 @@ new_process() {
   proc->next_fd = START_FD; // 0, 1, 2 are taken
   proc->cwd = new_directory(NULL); // FIXME: Need global dir.
   return proc;
+}
+
+void
+delete_process(Process *p) {
+  delete_directory(p->cwd);
+  for (int i = 0; i < MAX_FDS; ++i) {
+    FileHandle *handle = p->fd_table[i];
+    if (handle != NULL) panic("Cannot delete process: files open.");
+  }
+  free(p);
 }
 
 /* int */

@@ -40,4 +40,10 @@ size_t inode_read(Inode *, void *dst, off_t, size_t);
 size_t inode_write(Inode *, const void *src, off_t, size_t);
 size_t inode_size(Inode *);
 
+// Inode reference counting
+void inode_dec_file_ref(Inode *);
+void inode_inc_file_ref(Inode *);
+void inode_dec_link_ref(Inode *);
+void inode_inc_link_ref(Inode *);
+
 #endif // _SB_FILE_H

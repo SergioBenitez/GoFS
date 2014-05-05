@@ -38,14 +38,19 @@ directory_get_entry(Directory *dir, const char *name) {
   return NULL;
 }
 
-void
+int
 directory_insert(Directory *dir, const char *name, void *item) {
-  DirectoryEntry new_entry = new_directory_entry(name, item);
-  // FIXME: Should check that no entry with 'name' already exists.
-  DirectoryEntry *entry = directory_get_entry(dir, NULL);
+  // Checking to see if entry with 'name' already exists
+  DirectoryEntry *old_entry = directory_get_entry(dir, name);
+  if (old_entry != NULL) return -1;
 
-  if (entry == NULL) panic("Directory is full!");
-  *entry = new_entry;
+  // Finding a free entry
+  DirectoryEntry *free_entry = directory_get_entry(dir, NULL);
+  if (free_entry == NULL) panic("No free entries: directory is full!");
+
+  DirectoryEntry new_entry = new_directory_entry(name, item);
+  *free_entry = new_entry;
+  return 0;
 }
 
 int 
@@ -58,8 +63,6 @@ directory_remove(Directory *dir, const char *name) {
   entry->inode = NULL;
 
   return 0;
-  // Decrement the inode link count here?
-  // Who's responsibility should it be? Probably not the directory's.
 }
 
 Inode *
@@ -78,6 +81,26 @@ new_directory(Directory *parent) {
   dir->entries[1] = new_directory_entry(".", dir);
   dir->type = F_DIRECTORY;
   return dir;
+}
+
+void
+delete_directory(Directory *dir) {
+  if (directory_entry_count(dir) > 2)
+    panic("Cannot delete directory: directory is not empty.");
+
+  free(dir->entries[0].name);
+  free(dir->entries[1].name);
+  free(dir);
+}
+
+size_t
+directory_entry_count(Directory *dir) {
+  size_t size = 0;
+  for (int i = 0; i < MAX_ENTRIES; ++i) {
+    DirectoryEntry *entry = &dir->entries[i];
+    if (entry->name != NULL) size++;
+  }
+  return size;
 }
 
 void

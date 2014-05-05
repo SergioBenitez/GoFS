@@ -8,7 +8,7 @@ FileHandle *
 new_handle(Inode *inode) {
   FileHandle *handle = (FileHandle *)malloc(sizeof(FileHandle));
 
-  inode->file_count++;
+  inode_inc_file_ref(inode);
   handle->inode = inode;
   handle->status = F_OPEN;
   handle->seek = 0;
@@ -18,7 +18,7 @@ new_handle(Inode *inode) {
 
 void
 delete_handle(FileHandle *handle) {
-  // Need to account for reference counting
+  inode_dec_file_ref(handle->inode);
   free(handle);
 }
 

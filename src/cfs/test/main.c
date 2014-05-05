@@ -12,7 +12,7 @@ setup() {
 
 void
 teardown() {
-  // process_delete(p)?
+  delete_process(p);
 }
 
 unsigned char *
@@ -40,11 +40,12 @@ START_TEST(write_large_read) {
   read(p, fd, buf, size);
   ck_assert(!memcmp(data, buf, size));
 
-  off_t seek_point = 323;
+  off_t seek_point = 323; // random position to make sure seek + read/write ok
   seek(p, fd, seek_point, SEEK_SET);
   read(p, fd, buf, size - seek_point);
   ck_assert(!memcmp(data + seek_point, buf, size - seek_point));
 
+  close(p, fd);
   unlink(p, "file");
 } END_TEST
 

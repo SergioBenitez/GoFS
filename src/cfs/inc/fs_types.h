@@ -87,7 +87,10 @@ typedef struct Process_T {
 
 static inline void
 panic(const char *message) {
+  fputs("----------PANIC----------\n", stderr);
   fputs(message, stderr);
+  fputs("\n", stderr);
+  fputs("-------------------------\n", stderr);
   exit(1);
 }
 

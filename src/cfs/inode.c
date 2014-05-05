@@ -4,7 +4,7 @@
 #include "inc/file.h"
 
 uint8_t *allocate_page(void);
-void return_page(char *);
+void return_page(uint8_t *);
 static inline uint8_t **get_block(Inode *, int num);
 
 uint8_t *
@@ -13,7 +13,7 @@ allocate_page() {
 }
 
 void
-return_page(char *page) {
+return_page(uint8_t *page) {
   free(page); 
 }
 
@@ -29,7 +29,7 @@ new_inode() {
   memset(inode->blocks, 0, MAX_BLOCKS * sizeof(uint8_t *));
 
   inode->type = F_DATA;
-  inode->link_count = 1;
+  inode->link_count = 0;
   inode->file_count = 0;
   inode->size = 0;
 
@@ -41,11 +41,43 @@ new_inode() {
 }
 
 void
+delete_inode_if_needed(Inode *inode) {
+  if (inode->file_count == 0 && inode->link_count == 0)
+    delete_inode(inode);
+}
+
+void
 delete_inode(Inode *inode) {
-  // Need to account for reference counting
+  // Freeing used blocks
+  for (int i = 0; i < MAX_BLOCKS; ++i) {
+    uint8_t *block = inode->blocks[i];
+    if (block != NULL) return_page(block);
+  }
+
   free(inode);
 }
 
+void
+inode_dec_file_ref(Inode *inode) {
+  inode->file_count--;
+  delete_inode_if_needed(inode);
+}
+
+void
+inode_inc_file_ref(Inode *inode) {
+  inode->file_count++;
+}
+
+void
+inode_dec_link_ref(Inode *inode) {
+  inode->link_count--;
+  delete_inode_if_needed(inode);
+}
+
+void
+inode_inc_link_ref(Inode *inode) {
+  inode->link_count++;
+}
 
 size_t
 inode_read(Inode *inode, void *dst, off_t offset, size_t n) {
