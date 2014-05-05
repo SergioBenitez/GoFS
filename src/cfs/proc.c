@@ -40,6 +40,8 @@ open_file(Process *p, const char *path, uint32_t flags) {
    * Inode *inode = directory_get(dir, filename);
    *
    * Otherwise, we only have 1-level directories.
+   * Also need to check what type of inode was returned when we add multilevel
+   * directory support.
    */
 
   Inode *inode = directory_get(p->cwd, path);
@@ -99,9 +101,10 @@ new_process() {
 int
 main() {
   Process *p = new_process();
-  for (int i = 0; i < 1e7; i++) {
+  for (int i = 0; i < 1e6; i++) {
     FileDescriptor fd = open(p, "myfile", O_CREAT);
     close(p, fd);
   }
+  directory_print(p->cwd);
   unlink(p, "myfile");
 }

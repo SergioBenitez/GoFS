@@ -2,10 +2,10 @@
 #include <string.h>
 #include "inc/directory.h"
 
-#define UNUSED(x) (void)(x) 
-
 DirectoryEntry new_directory_entry(const char *, void *);
 DirectoryEntry *directory_get_entry(Directory *, const char *);
+void directory_print_off(Directory *, off_t);
+void repeat_char(const char c, int times);
 
 DirectoryEntry
 new_directory_entry(const char *name, void *inode) {
@@ -19,6 +19,10 @@ new_directory_entry(const char *name, void *inode) {
   return entry;
 }
 
+/**
+ * Finds the entry with name 'name'. If 'name' == NULL, then returns the first
+ * entry where 'name' == NULL indicating a free slot.
+ */
 DirectoryEntry *
 directory_get_entry(Directory *dir, const char *name) {
   for (int i = 0; i < MAX_ENTRIES; ++i) {
@@ -37,6 +41,7 @@ directory_get_entry(Directory *dir, const char *name) {
 void
 directory_insert(Directory *dir, const char *name, void *item) {
   DirectoryEntry new_entry = new_directory_entry(name, item);
+  // FIXME: Should check that no entry with 'name' already exists.
   DirectoryEntry *entry = directory_get_entry(dir, NULL);
 
   if (entry == NULL) panic("Directory is full!");
@@ -54,7 +59,7 @@ directory_remove(Directory *dir, const char *name) {
 
   return 0;
   // Decrement the inode link count here?
-  // Who's responsibility should it be? Probably not the directories.
+  // Who's responsibility should it be? Probably not the directory's.
 }
 
 Inode *
@@ -74,22 +79,47 @@ new_directory(Directory *parent) {
 }
 
 void
-directory_print(Directory *dir) {
+repeat_char(const char c, int times) {
+  for (int i = 0; i < times; ++i) putchar(c);
+}
+
+/** Just for debugging. Prints the structure of the directory adding 'offset'
+ * number of '\t' characters at the beginning of each line of input so that
+ * directories printed recursively appear nested in the output.
+ *
+ * 2 directories, 1 files
+ * [1] ..
+ * [1] .
+ * [0] myfile
+*/
+void
+directory_print_off(Directory *dir, off_t offset) {
   int num_files = 0;
   int num_dirs = 0;
   for (int i = 0; i < MAX_ENTRIES; ++i) {
     DirectoryEntry entry = dir->entries[i];
     if (entry.name != NULL) {
-       if (entry.inode->type == F_DATA) num_files++;
-       if (entry.inode->type == F_DIRECTORY) num_dirs++;
+      if (entry.inode->type == F_DATA) num_files++;
+      if (entry.inode->type == F_DIRECTORY) num_dirs++;
     }
   }
 
-  printf("\nDir Contents: %d directories, %d files\n", num_dirs, num_files);
+  repeat_char('\t', offset);
+  printf("%d directories, %d files\n", num_dirs, num_files);
   for (int i = 0; i < MAX_ENTRIES; ++i) {
     DirectoryEntry entry = dir->entries[i];
     if (entry.name != NULL) {
-      printf("%s (type: %d)\n", entry.name, entry.inode->type);
+      repeat_char('\t', offset);
+      printf("[%d] %s\n", entry.inode->type, entry.name);
+
+      // Print directories besides '..' and '.' recursively.
+      if (entry.inode->type == F_DIRECTORY && i > 1)
+        directory_print_off((Directory *)entry.inode, offset + 1);
     }
   }
+}
+
+void
+directory_print(Directory *dir) {
+  directory_print_off(dir, 0);
 }
