@@ -16,6 +16,4 @@ if [ $? -eq 1 ]; then
   exit 1
 fi
 
-gcc main.c ../*.c -lcheck -o test
-./test
-rm test
+gcc main.c ../*.c -lcheck -o test && ./test && rm test

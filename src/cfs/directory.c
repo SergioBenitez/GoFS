@@ -71,6 +71,8 @@ directory_get(Directory *dir, const char *name) {
 Directory *
 new_directory(Directory *parent) {
   Directory *dir = (Directory *)malloc(sizeof(Directory));
+  memset(dir->entries, 0, MAX_ENTRIES * sizeof(DirectoryEntry));
+
   Directory *parentDir = (parent == NULL) ? dir : parent;
   dir->entries[0] = new_directory_entry("..", parentDir);
   dir->entries[1] = new_directory_entry(".", dir);

@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "inc/proc.h"
 #include "inc/file.h"
 #include "inc/directory.h"
@@ -66,6 +67,7 @@ open(Process *p, const char *path, uint32_t flags) {
 int
 close(Process *p, FileDescriptor fd) {
   FileHandle *handle = p->fd_table[fd];
+  p->fd_table[fd] = NULL;
   return_fd(p, fd);
   delete_handle(handle);
   return 0;
@@ -90,9 +92,18 @@ write(Process *p, FileDescriptor fd, const void *src, size_t num) {
   return file_write(handle, src, num);
 }
 
+off_t
+seek(Process *p, FileDescriptor fd, off_t offset, int whence) {
+  FileHandle *handle = p->fd_table[fd];
+  return file_seek(handle, offset, whence);
+}
+
 Process *
 new_process() {
   Process *proc = (Process *)malloc(sizeof(Process));
+  memset(proc->fd_table, 0, MAX_FDS * sizeof(FileHandle *));
+  memset(proc->free_fds, 0, MAX_FDS * sizeof(uint16_t));
+
   proc->next_fd = START_FD; // 0, 1, 2 are taken
   proc->cwd = new_directory(NULL); // FIXME: Need global dir.
   return proc;

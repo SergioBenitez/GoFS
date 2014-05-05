@@ -21,14 +21,23 @@
 #define O_EVTONLY   (1 << 12)
 #define O_CLOEXEC   (1 << 13)
 
+// Whence Values
+#define SEEK_SET    0
+#define SEEK_CUR    1
+#define SEEK_END    2
+
+#define PAGE_SIZE   4096
+
+FileHandle *new_handle(Inode *);
+void delete_handle(FileHandle *);
 size_t file_read(FileHandle *, void *dst, size_t);
 size_t file_write(FileHandle *, const void *src, size_t);
 off_t file_seek(FileHandle *, off_t, int whence);
 
 Inode *new_inode();
-FileHandle *new_handle(Inode *);
-
 void delete_inode(Inode *);
-void delete_handle(FileHandle *);
+size_t inode_read(Inode *, void *dst, off_t, size_t);
+size_t inode_write(Inode *, const void *src, off_t, size_t);
+size_t inode_size(Inode *);
 
 #endif // _SB_FILE_H

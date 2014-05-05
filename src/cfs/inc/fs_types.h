@@ -51,7 +51,8 @@ typedef enum FILE_TYPE_E {
 
 typedef struct Inode_T {
   FILE_TYPE type; // Doing some hackery here. See directory/inode note above.
-  char *blocks[MAX_BLOCKS];
+  uint8_t *blocks[MAX_BLOCKS];
+  size_t size;
 
   time_t mod_time;
   time_t access_time;
@@ -84,10 +85,15 @@ typedef struct Process_T {
   int next_fd;
 } Process;
 
-void inline
+static inline void
 panic(const char *message) {
   fputs(message, stderr);
   exit(1);
+}
+
+static inline int
+ceil_div(int x, int y) {
+  return (x + y - 1) / y;
 }
 
 #endif
