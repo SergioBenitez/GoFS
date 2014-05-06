@@ -93,9 +93,10 @@ func newProc(b *testing.B) *gofs.ProcState {
 
 func BenchmarkOC1(b *testing.B) {
   p := newProc(b)
+  mode := gofs.UserMode()
   for j := 0; j < b.N; j++ {
     // for i := 0; i < 17108864; i++ { // string garbage?
-      fd, err := p.Open("test", gofs.O_CREAT, gofs.UserMode())
+      fd, err := p.Open("test", gofs.O_CREAT, mode)
       if err != nil { b.Fatal("bad open") }
       p.Close(fd)
     // }
