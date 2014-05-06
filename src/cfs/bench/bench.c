@@ -36,6 +36,7 @@ init_filename(int n, int pfx_len, int end_len, char *pfix, char *end) {
   for (int i = 0; i < pfx_len; ++i) filename[i] = pfix[i];
   for (int i = 0; i < len; ++i) filename[pfx_len + i] = '@';
   for (int i = 0; i < end_len; ++i) filename[pfx_len + len + i] = end[i];
+  filename[pfx_len + len + end_len] = '\0';
   
   return filename;
 }
