@@ -33,9 +33,9 @@
  */
 
 // Array Size Maximums
-#define MAX_BLOCKS  256
-#define MAX_FDS     512
-#define MAX_ENTRIES 128
+#define MAX_BLOCKS      256
+#define MAX_FDS         512
+#define MAX_DIR_ENTRIES 128
 
 typedef int FileDescriptor;
 
@@ -69,7 +69,7 @@ typedef struct DirectoryEntry_T {
 
 typedef struct Directory_T {
   FILE_TYPE type; // See directory/inode note above.
-  DirectoryEntry entries[MAX_ENTRIES];
+  DirectoryEntry entries[MAX_DIR_ENTRIES];
 } Directory;
 
 typedef struct FileHandle_T {

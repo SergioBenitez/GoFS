@@ -25,7 +25,7 @@ new_directory_entry(const char *name, void *inode) {
  */
 DirectoryEntry *
 directory_get_entry(Directory *dir, const char *name) {
-  for (int i = 0; i < MAX_ENTRIES; ++i) {
+  for (int i = 0; i < MAX_DIR_ENTRIES; ++i) {
     DirectoryEntry *entry = &dir->entries[i];
     if (name == NULL) {
       if (entry->name == NULL) return entry;
@@ -74,7 +74,7 @@ directory_get(Directory *dir, const char *name) {
 Directory *
 new_directory(Directory *parent) {
   Directory *dir = (Directory *)malloc(sizeof(Directory));
-  memset(dir->entries, 0, MAX_ENTRIES * sizeof(DirectoryEntry));
+  memset(dir->entries, 0, MAX_DIR_ENTRIES * sizeof(DirectoryEntry));
 
   Directory *parentDir = (parent == NULL) ? dir : parent;
   dir->entries[0] = new_directory_entry("..", parentDir);
@@ -96,7 +96,7 @@ delete_directory(Directory *dir) {
 size_t
 directory_entry_count(Directory *dir) {
   size_t size = 0;
-  for (int i = 0; i < MAX_ENTRIES; ++i) {
+  for (int i = 0; i < MAX_DIR_ENTRIES; ++i) {
     DirectoryEntry *entry = &dir->entries[i];
     if (entry->name != NULL) size++;
   }
@@ -121,7 +121,7 @@ void
 directory_print_off(Directory *dir, off_t offset) {
   int num_files = 0;
   int num_dirs = 0;
-  for (int i = 0; i < MAX_ENTRIES; ++i) {
+  for (int i = 0; i < MAX_DIR_ENTRIES; ++i) {
     DirectoryEntry entry = dir->entries[i];
     if (entry.name != NULL) {
       if (entry.inode->type == F_DATA) num_files++;
@@ -131,7 +131,7 @@ directory_print_off(Directory *dir, off_t offset) {
 
   repeat_char('\t', offset);
   printf("%d directories, %d files\n", num_dirs, num_files);
-  for (int i = 0; i < MAX_ENTRIES; ++i) {
+  for (int i = 0; i < MAX_DIR_ENTRIES; ++i) {
     DirectoryEntry entry = dir->entries[i];
     if (entry.name != NULL) {
       repeat_char('\t', offset);
