@@ -80,20 +80,20 @@ func (s *PageStore) Size() int {
 }
 
 // Releases all pages in a singly-indirect block of pages
-func (s *PageStore) ReleaseSinglePages(pages *[ENTRIES][]byte) {
-  for _, value := range pages {
+func (s *PageStore) ReleaseSinglePages(index int, pages *[ENTRIES][]byte) {
+  for i, value := range pages {
+    if (index * ENTRIES + i >= s.pagesUsed) { return }
     if value != nil { GlobalPageArena.ReturnPage(value) }
   }
 }
 
 func (s *PageStore) ReleasePages() {
-  if s.single != nil { s.ReleaseSinglePages(s.single) }
-
+  if s.single != nil { s.ReleaseSinglePages(0, s.single) }
   if s.double == nil { return }
 
   for i, single := range s.double {
-    if i > s.pagesUsed - len(s.single) { break }
-    if single != nil { s.ReleaseSinglePages(single) }
+    if (i + 1) * ENTRIES >= s.pagesUsed { return }
+    if single != nil { s.ReleaseSinglePages(i + 1, single) }
   }
 }
 

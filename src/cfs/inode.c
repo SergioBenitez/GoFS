@@ -6,6 +6,7 @@
 uint8_t *allocate_page(void);
 void return_page(uint8_t *);
 static inline uint8_t **get_block(Inode *, int num);
+size_t inode_read_write(Inode *, const void *, void *, off_t, size_t);
 
 uint8_t *
 allocate_page() {
@@ -79,65 +80,72 @@ inode_inc_link_ref(Inode *inode) {
   inode->link_count++;
 }
 
+/**
+ * Both reads and writes from the inode. 
+ * Exactly one of src or dst must be valid.
+ *
+ * Reads from inode to dst if dst != NULL
+ * Writes to inode from src if src != NULL
+ */
 size_t
-inode_read(Inode *inode, void *dst, off_t offset, size_t n) {
-  /* printf("Reading %zu bytes to %p at %lld.\n", n, dst, offset); */
-  /* printf("Inode is %zu bytes.\n", inode_size(inode)); */
-  if (dst == NULL || offset >= (off_t)inode_size(inode)) return 0;
+inode_read_write(Inode *inode, const void *src, void *dst, off_t o, size_t n) {
+  if ((src == NULL && dst == NULL) || (src != NULL && dst != NULL))
+    panic("Exactly one of src or dst must be valid!");
 
-  size_t read = 0;
-  off_t block_offset = offset % PAGE_SIZE;
-  int start = offset / PAGE_SIZE;
-  int blocks_to_read = ceil_div(block_offset + n, PAGE_SIZE);
-  for (int i = 0; i < blocks_to_read; ++i) {
+  // here, 'act' is a pseudonym for reading or writing to blocks
+  // if src != NULL, we're reading from src and [writing] to blocks
+  // if dst != NULL, we're writing to dst and [reading] from blocks
+  size_t bytes_acted_on = 0;
+  int start = o / PAGE_SIZE; // first block to act on
+  off_t block_offset = o % PAGE_SIZE; // offset from first block
+  int blocks_to_act_on = ceil_div(block_offset + n, PAGE_SIZE);
+  for (int i = 0; i < blocks_to_act_on; ++i) {
+    // Resetting the block offset after first pass since we want to read from
+    // the beginning of the block after the first time.
     if (block_offset != 0 && i > 0) block_offset = 0;
 
-    uint8_t *block = *get_block(inode, start + i) + block_offset;
-    if (block == NULL) panic("Reading where no data exists!");
+    // Finding our block, adding offset, allocating on write if necessary
+    uint8_t **block_ptr = get_block(inode, start + i);
+    if (src != NULL && *block_ptr == NULL) *block_ptr = allocate_page();
+    if (dst != NULL && *block_ptr == NULL) panic("Reading nonexisting data!");
+    uint8_t *block = *block_ptr + block_offset;
 
-    size_t bytes_to_read;
-    if (i == blocks_to_read - 1) bytes_to_read = n - read;
-    else bytes_to_read = PAGE_SIZE - block_offset;
+    // Figuring out how many bytes (num_bytes) to read from / write to the block
+    // Need to account for offsets from first and last blocks
+    size_t num_bytes;
+    if (i == blocks_to_act_on - 1) num_bytes = n - bytes_acted_on;
+    else num_bytes = PAGE_SIZE - block_offset;
 
-    memcpy(dst, block, bytes_to_read);
-    dst += bytes_to_read;
-    read += bytes_to_read;
+    // if src != NULL, then writing to block, else reading from block
+    if (src != NULL) {
+      memcpy(block, src, num_bytes);
+      src += num_bytes;
+    } else {
+      memcpy(dst, block, num_bytes);
+      dst += num_bytes;
+    }
+
+    bytes_acted_on += num_bytes;
   }
 
-  /* printf("Read %zu bytes.\n", read); */
-  return read;
+  return bytes_acted_on;
+}
+
+size_t
+inode_read(Inode *inode, void *dst, off_t offset, size_t n) {
+  if (dst == NULL || offset >= (off_t)inode_size(inode)) return 0;
+
+  return inode_read_write(inode, NULL, dst, offset, n);
 }
 
 size_t
 inode_write(Inode *inode, const void *src, off_t offset, size_t n) {
   if (src == NULL) return 0;
-  /* printf("Writing %zu bytes from %p at %lld.\n", n, src, offset); */
 
-  size_t written = 0;
-  off_t block_offset = offset % PAGE_SIZE;
-  int start = offset / PAGE_SIZE;
-  int blocks_to_write = ceil_div(block_offset + n, PAGE_SIZE);
-  for (int i = 0; i < blocks_to_write; ++i) {
-    if (block_offset != 0 && i > 0) block_offset = 0;
+  size_t written = inode_read_write(inode, src, NULL, offset, n);
+  if (offset + written > inode->size)
+    inode->size = offset + written;
 
-    uint8_t **block_ptr = get_block(inode, start + i);
-    /* printf("Block starts at %p. || ", *block_ptr); */
-    if (*block_ptr == NULL) *block_ptr = allocate_page();
-    uint8_t *block = *block_ptr + block_offset;
-    /* printf("Block starts at %p.\n", *block_ptr); */
-
-    size_t bytes_to_write;
-    if (i == blocks_to_write - 1) bytes_to_write = n - written;
-    else bytes_to_write = PAGE_SIZE - block_offset;
-
-    // printf("Copying %zu bytes to %p from %p\n", bytes_to_write, block, src);
-    memcpy(block, src, bytes_to_write);
-    src += bytes_to_write;
-    written += bytes_to_write;
-  }
-
-  /* printf("Wrote %zu bytes.\n", written); */
-  if (offset + n > inode->size) inode->size = offset + n;
   return written;
 }
 
