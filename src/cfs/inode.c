@@ -20,14 +20,32 @@ return_page(uint8_t *page) {
 
 static inline uint8_t **
 get_block(Inode *inode, int num) {
-  if (num >= MAX_BLOCKS) panic("Exceeding file size.");
-  return &inode->blocks[num];
+  if (num >= TOTAL_BLOCKS) panic("Exceeding file size.");
+
+  // If looking at the singly indirect list
+  if (num < MAX_BLOCKS) return &inode->blocks[num];
+
+  // Looking at the doubly-indirect list
+  int double_offset = num - MAX_BLOCKS;
+  int double_slot = double_offset / MAX_BLOCKS;
+  int single_slot = double_offset % MAX_BLOCKS;
+
+  /* printf("Allocating doubly pag: %d, %d\n", double_slot, single_slot); */
+
+  uint8_t ***single_ptr = &(inode->double_blocks[double_slot]);
+  // allocate singly indirect block
+  if (*single_ptr == NULL)
+    *single_ptr = (uint8_t **)calloc(MAX_BLOCKS, sizeof(uint8_t *)); 
+
+  if (*single_ptr == NULL) panic("Could not allocate memory.\n");
+  return *single_ptr + single_slot;
 }
 
 Inode *
 new_inode() {
   Inode *inode = (Inode *)malloc(sizeof(Inode));
   memset(inode->blocks, 0, MAX_BLOCKS * sizeof(uint8_t *));
+  memset(inode->double_blocks, 0, MAX_BLOCKS * sizeof(uint8_t **));
 
   inode->type = F_DATA;
   inode->link_count = 0;
@@ -47,12 +65,34 @@ delete_inode_if_needed(Inode *inode) {
     delete_inode(inode);
 }
 
-void
-delete_inode(Inode *inode) {
+static inline void
+release_singly_blocks(int slot, uint8_t **singly, int blocks_used) {
   // Freeing used blocks
   for (int i = 0; i < MAX_BLOCKS; ++i) {
-    uint8_t *block = inode->blocks[i];
+    if (slot * MAX_BLOCKS + i >= blocks_used) return;
+
+    uint8_t *block = singly[i];
     if (block != NULL) return_page(block);
+  }
+}
+
+void
+delete_inode(Inode *inode) {
+  // Let's not do the calculation a bunch of times.
+  int blocks_used = ceil_div(inode->size, PAGE_SIZE);
+
+  // Releasing all pages from the singly-indirect blocks list
+  release_singly_blocks(0, inode->blocks, blocks_used);
+
+  // Releasing all pages from the doubly-indirect blocks list
+  for (int i = 0; i < MAX_BLOCKS; ++i) {
+    if ((i + 1) * MAX_BLOCKS >= blocks_used) return;
+
+    uint8_t **singly = inode->double_blocks[i];
+    if (singly != NULL) {
+      release_singly_blocks(i + 1, singly, blocks_used);
+      free(singly);
+    }
   }
 
   free(inode);

@@ -333,15 +333,14 @@ int main() {
   benchmark("OpenWriteSmallCloseUnlink", OWsCU, NULL, 4);
   benchmark("OpenWriteBigClose", OWbC, cleanup_many, 4);
   benchmark("OpenWriteBigCloseUnlink", OWbCU, NULL, 5);
-  // These can't currently be run since max file size is currently 256 pages
   // These need 1,024 pages
-  /* benchmark("OpenWriteManySmallClose", OWMsC, cleanup_many, 3); */
-  /* benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, NULL, 5); */
+  benchmark("OpenWriteManySmallClose", OWMsC, cleanup_many, 3);
+  benchmark("OpenWriteManySmallCloseUnlink", OWMsCU, NULL, 5);
   // These need 8,192 pages
-  /* benchmark("OpenWriteManyBigClose", OWMbC, cleanup_many, 5); */
-  /* benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, NULL, 6); */
+  benchmark("OpenWriteManyBigClose", OWMbC, cleanup_many, 5);
+  benchmark("OpenWriteManyBigCloseUnlink", OWMbCU, NULL, 6);
   // These need 4,097 pages
-  /* benchmark("OpenWriteManyBiggerClose", OWMbbC, cleanup, 5); */
-  /* benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, NULL, 6); */
+  benchmark("OpenWriteManyBiggerClose", OWMbbC, cleanup_many, 5);
+  benchmark("OpenWriteManyBiggerCloseUnlink", OWMbbCU, NULL, 6);
   delete_process(p);
 }

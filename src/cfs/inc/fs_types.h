@@ -34,6 +34,7 @@
 
 // Array Size Maximums
 #define MAX_BLOCKS      256
+#define TOTAL_BLOCKS    MAX_BLOCKS + (MAX_BLOCKS * MAX_BLOCKS)
 #define MAX_FDS         512
 #define MAX_DIR_ENTRIES 128
 
@@ -52,6 +53,7 @@ typedef enum FILE_TYPE_E {
 typedef struct Inode_T {
   FILE_TYPE type; // Doing some hackery here. See directory/inode note above.
   uint8_t *blocks[MAX_BLOCKS];
+  uint8_t **double_blocks[MAX_BLOCKS];
   size_t size;
 
   time_t mod_time;
