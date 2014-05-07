@@ -86,7 +86,7 @@ delete_inode(Inode *inode) {
 
   // Releasing all pages from the doubly-indirect blocks list
   for (int i = 0; i < MAX_BLOCKS; ++i) {
-    if ((i + 1) * MAX_BLOCKS >= blocks_used) return;
+    if ((i + 1) * MAX_BLOCKS >= blocks_used) break;
 
     uint8_t **singly = inode->double_blocks[i];
     if (singly != NULL) {
