@@ -3,9 +3,10 @@ package dstore
 // import "fmt"
 
 var GlobalPageArena *PageArena
+const USE_PAGE_ARENA = true
 
 const PAGE_SIZE = 4096
-const EXP_GROW_LIMIT = 65536 // 131,072 pages = 256MB
+const EXP_GROW_LIMIT = 65536 // 65,536 pages = 256MB
 // const EXP_GROW_LIMIT = 131072 // 131,072 pages = 512MB
 // const EXP_GROW_LIMIT = 262144 // 262,144 pages = 1GB
 // const EXP_GROW_LIMIT = 1048576 // 4GB
@@ -51,6 +52,7 @@ func (a *PageArena) grow() {
 // NOTE! Page is not guaranteed to be zeroed!
 func (a *PageArena) AllocatePage() []byte {
   // fmt.Println("Allocating page. Pages so far:", a.alloc)
+  if (!USE_PAGE_ARENA) { return make([]byte, PAGE_SIZE, PAGE_SIZE) }
 
   if a.alloc >= a.size { a.grow() }
   if a.alloc >= a.size { panic("Out of memory @ pageArena!") }
@@ -61,6 +63,7 @@ func (a *PageArena) AllocatePage() []byte {
 }
 
 func (a *PageArena) ReturnPage(page []byte) {
+  if (!USE_PAGE_ARENA) { return }
   if a.alloc <= 0 { panic("Over-freeing pages!") }
 
   a.alloc -= 1
@@ -70,10 +73,15 @@ func (a *PageArena) ReturnPage(page []byte) {
 func InitPageArena(size int) *PageArena {
   // fmt.Println("New arena with size", size)
 
+  var init_pages [][]byte = nil
+  if (USE_PAGE_ARENA) {
+    init_pages = allocatePages(size)
+  }
+
   arena := &PageArena{
     alloc: 0,
     size: size,
-    pages: allocatePages(size),
+    pages: init_pages,
   }
 
   return arena
