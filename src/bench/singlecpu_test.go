@@ -284,7 +284,7 @@ func BenchmarkOWMbCU(b *testing.B) {
 //
 // for NUM = 100, startSize = 2, many = 4096, this is ~1.56GB
 
-func BenchmarkOWMbbC(b *testing.B) {
+func BenchmarkOWbbC(b *testing.B) {
   startSize := 2
   many := 4096
 
@@ -301,7 +301,7 @@ func BenchmarkOWMbbC(b *testing.B) {
   }
 }
 
-func BenchmarkOWMbbCU(b *testing.B) {
+func BenchmarkOWbbCU(b *testing.B) {
   startSize := 2
   many := 4096
 
