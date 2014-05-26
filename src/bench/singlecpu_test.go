@@ -151,8 +151,8 @@ func BenchmarkOWsC(b *testing.B) {
   size := 1024
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Write(fd, content)
       p.Close(fd)
@@ -165,8 +165,8 @@ func BenchmarkOWsCU(b *testing.B) {
   size := 1024
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       p.Write(fd, content)
       p.Close(fd)
@@ -180,8 +180,8 @@ func BenchmarkOWbC(b *testing.B) {
   size := 40960
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       p.Write(fd, content)
       p.Close(fd)
@@ -194,8 +194,8 @@ func BenchmarkOWbCU(b *testing.B) {
   size := 40960
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       p.Write(fd, content)
       p.Close(fd)
@@ -210,8 +210,8 @@ func BenchmarkOWMsC(b *testing.B) {
   many := 4096
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       for i := 0; i < many; i++ {
         p.Write(fd, content)
@@ -227,8 +227,8 @@ func BenchmarkOWMsCU(b *testing.B) {
   many := 4096
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       for i := 0; i < many; i++ {
         p.Write(fd, content)
@@ -249,8 +249,8 @@ func BenchmarkOWMbC(b *testing.B) {
   many := 32
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       for i := 0; i < many; i++ {
         p.Write(fd, content)
@@ -266,8 +266,8 @@ func BenchmarkOWMbCU(b *testing.B) {
   many := 32
 
   p := newProc(b)
+  content := randBytes(b, size)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, size)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       for i := 0; i < many; i++ {
         p.Write(fd, content)
@@ -289,8 +289,8 @@ func BenchmarkOWbbC(b *testing.B) {
   many := 4096
 
   p := newProc(b)
+  content := randBytes(b, startSize * many)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, startSize * many)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, _ string) {
       for i := 1; i <= many; i++ {
         p.Write(fd, content[:startSize * i])
@@ -306,8 +306,8 @@ func BenchmarkOWbbCU(b *testing.B) {
   many := 4096
 
   p := newProc(b)
+  content := randBytes(b, startSize * many)
   for j := 0; j < b.N; j++ {
-    content := randBytes(b, startSize * many)
     openManyC(b, p, NUM, func(fd gofs.FileDescriptor, s string) {
       for i := 1; i <= many; i++ {
         p.Write(fd, content[:startSize * i])

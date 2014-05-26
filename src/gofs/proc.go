@@ -117,9 +117,8 @@ func (proc *ProcState) Link(src string, dst string) error {
   _, exists := dstDir[baseName]
   if exists { return errors.New("Destination file already exists.") }
 
-  switch file.(type) {
+  switch inode := file.(type) {
   case *Inode:
-    inode := file.(*Inode)
     inode.incrementLinkCount()
   }
 
@@ -178,9 +177,8 @@ func (proc *ProcState) Unlink(path string) error {
   file, ok := dir[name]
   if !ok { return errors.New("Cannot unlink nonexisting file.") }
 
-  switch file.(type) {
+  switch inode := file.(type) {
   case *Inode:
-    inode := file.(*Inode)
     inode.decrementLinkCount()
   }
 

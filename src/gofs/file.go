@@ -143,9 +143,8 @@ func initDataFile(inode *Inode) *DataFile {
 
 func (inode *Inode) destroyIfNeeded() {
   if inode.linkCount == 0 && inode.fileCount == 0 {
-    switch inode.data.(type) {
+    switch data := inode.data.(type) {
     case *dstore.PageStore:
-      data := (inode.data).(*dstore.PageStore)
       data.ReleasePages()
     }
     // fmt.Println("Destroy!")
